@@ -94,6 +94,17 @@ if (!gotTheLock) {
       mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
     }
 
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+      console.error(`[BlackHat UI Load Failure] Code: ${errorCode}, Description: ${errorDescription}, URL: ${validatedURL}`);
+    });
+
+    // DevTools shortcut (F12 or Cmd+Alt+I)
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i') || (input.meta && input.alt && input.key.toLowerCase() === 'i')) {
+        mainWindow.webContents.toggleDevTools();
+      }
+    });
+
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url);
       return { action: 'deny' };

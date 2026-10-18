@@ -213,10 +213,14 @@ export const App: React.FC = () => {
     localStorage.setItem('blackhat_user_profile', JSON.stringify(user));
   }, [user]);
 
+  const API_BASE = typeof window !== 'undefined' && window.location.protocol === 'file:' 
+    ? 'http://localhost:3001' 
+    : '';
+
   // Load file tree on startup
   const loadFiles = async () => {
     try {
-      const res = await fetch('/api/files');
+      const res = await fetch(`${API_BASE}/api/files`);
       const data = await res.json();
       if (data.success && data.tree) {
         setFileTree(data.tree);
@@ -255,7 +259,7 @@ export const App: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`);
+      const res = await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`);
       const data = await res.json();
       if (data.success) {
         const newTab: EditorTab = {
@@ -276,7 +280,7 @@ export const App: React.FC = () => {
 
   const handleCreateFile = async (filePath: string, isDirectory: boolean) => {
     try {
-      await fetch('/api/file/create', {
+      await fetch(`${API_BASE}/api/file/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: filePath, isDirectory, content: '' })
@@ -292,7 +296,7 @@ export const App: React.FC = () => {
 
   const handleDeleteFile = async (filePath: string) => {
     try {
-      await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
+      await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`, {
         method: 'DELETE'
       });
       setTabs(prev => prev.filter(t => t.path !== filePath));
@@ -307,7 +311,7 @@ export const App: React.FC = () => {
     if (!activeTab || !activeTab.isDirty) return;
 
     try {
-      await fetch('/api/file', {
+      await fetch(`${API_BASE}/api/file`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: activeTab.path, content: activeTab.content })
@@ -343,7 +347,7 @@ export const App: React.FC = () => {
   // Terminal execution
   const handleRunTerminalCommand = async (command: string) => {
     try {
-      const res = await fetch('/api/terminal/run', {
+      const res = await fetch(`${API_BASE}/api/terminal/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command })
@@ -414,7 +418,7 @@ export const App: React.FC = () => {
         (agent.provider === 'anthropic' && settings.subscriptions.claude.isActive) ||
         (agent.provider === 'openai' && settings.subscriptions.codex.isActive);
 
-      const response = await fetch('/api/agent/stream', {
+      const response = await fetch(`${API_BASE}/api/agent/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -543,7 +547,7 @@ export const App: React.FC = () => {
   };
 
   const handleStopAgent = async (agentId: string) => {
-    await fetch('/api/agent/stop', {
+    await fetch(`${API_BASE}/api/agent/stop`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ agentId })

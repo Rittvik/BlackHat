@@ -15,6 +15,7 @@ import { AccountModal } from './components/Modals/AccountModal';
 import { AddAgentModal } from './components/Modals/AddAgentModal';
 import { CommandPalette } from './components/Modals/CommandPalette';
 import { LoginScreen } from './components/Auth/LoginScreen';
+import { TopMenuBar } from './components/Header/TopMenuBar';
 import { 
   FileNode, 
   EditorTab, 
@@ -345,6 +346,100 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [tabs, activeTabIndex]);
 
+  // Handle native application menu commands from Electron
+  useEffect(() => {
+    if ((window as any).electronAPI?.onMenuCommand) {
+      const cleanup = (window as any).electronAPI.onMenuCommand((cmd: string) => {
+        switch (cmd) {
+          case 'new-file':
+            handleCreateFile('untitled.ts', false);
+            break;
+          case 'new-folder':
+            handleCreateFile('new_folder', true);
+            break;
+          case 'save-file':
+            handleSaveFile();
+            break;
+          case 'save-all':
+            handleSaveAllFiles();
+            break;
+          case 'close-active-tab':
+            if (tabs.length > 0) handleCloseTab(activeTabIndex);
+            break;
+          case 'close-all-tabs':
+            setTabs([]);
+            break;
+          case 'command-palette':
+            setIsCommandPaletteOpen(true);
+            break;
+          case 'open-settings':
+            setIsSettingsOpen(true);
+            break;
+          case 'open-account':
+            setIsAccountModalOpen(true);
+            break;
+          case 'view-explorer':
+            setActiveView('explorer');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-search':
+            setActiveView('search');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-source-control':
+            setActiveView('source-control');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-run-debug':
+            setActiveView('run-debug');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-extensions':
+            setActiveView('extensions');
+            setIsSidebarVisible(true);
+            break;
+          case 'toggle-sidebar':
+            setIsSidebarVisible(prev => !prev);
+            break;
+          case 'toggle-agent-window':
+            setIsAgentWindowVisible(prev => !prev);
+            break;
+          case 'toggle-terminal':
+            setIsTerminalOpen(prev => !prev);
+            break;
+          case 'next-tab':
+            if (tabs.length > 1) {
+              setActiveTabIndex(prev => (prev + 1) % tabs.length);
+            }
+            break;
+          case 'prev-tab':
+            if (tabs.length > 1) {
+              setActiveTabIndex(prev => (prev - 1 + tabs.length) % tabs.length);
+            }
+            break;
+          case 'run-debug-target':
+            setActiveView('run-debug');
+            setIsSidebarVisible(true);
+            break;
+          case 'run-dev-server':
+            setIsTerminalOpen(true);
+            handleRunTerminalCommand('npm run dev');
+            break;
+          case 'run-all-agents':
+            handleRunAllThreeAgentsConcurrently();
+            break;
+          case 'new-terminal':
+            setIsTerminalOpen(true);
+            break;
+          case 'clear-terminal':
+            setTerminalEntries([]);
+            break;
+        }
+      });
+      return () => cleanup();
+    }
+  }, [tabs, activeTabIndex]);
+
   // File Operations
   const handleSelectFile = async (filePath: string) => {
     const existingIndex = tabs.findIndex(t => t.path === filePath);
@@ -437,6 +532,67 @@ export const App: React.FC = () => {
     if (activeTabIndex >= index && activeTabIndex > 0) {
       setActiveTabIndex(prev => prev - 1);
     }
+  };
+
+  const handleRenameFile = async (oldPath: string, newPath: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/file/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPath, newPath })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTabs(prev => prev.map(t => 
+          t.path === oldPath 
+            ? { ...t, path: newPath, name: newPath.split('/').pop() || newPath, language: getLanguageFromPath(newPath) } 
+            : t
+        ));
+        await loadFiles();
+      }
+    } catch (err) {
+      console.error('Failed to rename file:', err);
+    }
+  };
+
+  const handleDuplicateFile = async (filePath: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/file/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath })
+      });
+      const data = await res.json();
+      if (data.success && data.newPath) {
+        await loadFiles();
+        await handleSelectFile(data.newPath);
+      }
+    } catch (err) {
+      console.error('Failed to duplicate file:', err);
+    }
+  };
+
+  const handleRevealInFinder = (filePath: string) => {
+    if ((window as any).electronAPI?.revealInFinder) {
+      (window as any).electronAPI.revealInFinder(filePath);
+    }
+  };
+
+  const handleSaveAllFiles = async () => {
+    for (const tab of tabs) {
+      if (tab.isDirty) {
+        try {
+          await fetch(`${API_BASE}/api/file`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: tab.path, content: tab.content })
+          });
+        } catch (e) {
+          console.error('Failed to save file:', tab.path, e);
+        }
+      }
+    }
+    setTabs(prev => prev.map(t => ({ ...t, isDirty: false, originalContent: t.content })));
   };
 
   // Terminal execution
@@ -831,16 +987,33 @@ export const App: React.FC = () => {
           isElectron && platform === 'darwin' ? 'pl-[78px]' : ''
         }`}
       >
-        {/* Left Section: Branding & Workspace Path */}
-        <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        {/* Left Section: Branding & Menu Bar */}
+        <div className="flex items-center gap-2.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <span className="text-[12px] font-medium text-white flex items-center gap-1.5">
             <span className="w-4 h-4 rounded bg-[#0078d4] text-white text-[9px] font-bold flex items-center justify-center font-mono">
               BH
             </span>
             <span>BlackHat</span>
           </span>
-          <span className="text-[11px] text-[#555555]">/</span>
-          <span className="text-[11px] text-[#858585]">workspace</span>
+
+          {/* Antigravity / VS Code-style Application Menu Bar */}
+          <TopMenuBar
+            onNewFile={() => handleCreateFile('untitled.ts', false)}
+            onNewFolder={() => handleCreateFile('new_folder', true)}
+            onSaveFile={handleSaveFile}
+            onSaveAllFiles={handleSaveAllFiles}
+            onCloseActiveTab={() => { if (tabs.length > 0) handleCloseTab(activeTabIndex); }}
+            onCloseAllTabs={() => setTabs([])}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenAccount={() => setIsAccountModalOpen(true)}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onSelectView={(v) => { setActiveView(v); setIsSidebarVisible(true); }}
+            onToggleSidebar={() => setIsSidebarVisible(prev => !prev)}
+            onToggleTerminal={() => setIsTerminalOpen(prev => !prev)}
+            onToggleAgentStudio={() => setIsAgentWindowVisible(prev => !prev)}
+            onRunAllAgents={handleRunAllThreeAgentsConcurrently}
+            onRunDebugTarget={() => { setActiveView('run-debug'); setIsSidebarVisible(true); }}
+          />
         </div>
 
         {/* Center Search / Command Trigger */}
@@ -969,6 +1142,9 @@ export const App: React.FC = () => {
                 onRefresh={loadFiles}
                 onCreateFile={handleCreateFile}
                 onDeleteFile={handleDeleteFile}
+                onRenameFile={handleRenameFile}
+                onDuplicateFile={handleDuplicateFile}
+                onRevealInFinder={handleRevealInFinder}
               />
             )}
             {activeView === 'search' && (

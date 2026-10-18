@@ -132,6 +132,38 @@ app.delete('/api/file', async (req, res) => {
   }
 });
 
+app.post('/api/file/rename', async (req, res) => {
+  try {
+    const { oldPath, newPath } = req.body;
+    if (!oldPath || !newPath) return res.status(400).json({ error: 'Missing oldPath or newPath' });
+    const fullOld = path.resolve(WORKSPACE_ROOT, oldPath);
+    const fullNew = path.resolve(WORKSPACE_ROOT, newPath);
+    await fs.mkdir(path.dirname(fullNew), { recursive: true });
+    await fs.rename(fullOld, fullNew);
+    res.json({ success: true, message: `Renamed to ${newPath}` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/file/duplicate', async (req, res) => {
+  try {
+    const { path: relPath } = req.body;
+    if (!relPath) return res.status(400).json({ error: 'Missing path' });
+    const fullPath = path.resolve(WORKSPACE_ROOT, relPath);
+    const ext = path.extname(relPath);
+    const base = path.basename(relPath, ext);
+    const dir = path.dirname(relPath);
+    const newName = `${base}_copy${ext}`;
+    const newRelPath = dir === '.' ? newName : path.join(dir, newName);
+    const fullNew = path.resolve(WORKSPACE_ROOT, newRelPath);
+    await fs.copyFile(fullPath, fullNew);
+    res.json({ success: true, newPath: newRelPath });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 1b. Global Search in Workspace
 app.get('/api/search', async (req, res) => {
   try {

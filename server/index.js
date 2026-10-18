@@ -278,42 +278,42 @@ app.post('/api/terminal/run', async (req, res) => {
 
   const isWindows = process.platform === 'win32';
   const shell = isWindows ? (process.env.COMSPEC || 'powershell.exe') : (process.env.SHELL || '/bin/zsh');
-  const executionCwd = reqCwd ? path.resolve(WORKSPACE_ROOT, reqCwd) : WORKSPACE_ROOT;
 
-  const trimmed = command.trim();
-  // Handle cd command navigation
-  if (trimmed === 'cd' || trimmed.startsWith('cd ')) {
-    const targetDir = trimmed === 'cd' ? os.homedir() : trimmed.slice(3).trim();
-    const resolved = path.resolve(executionCwd, targetDir.replace(/^~/, os.homedir()));
-    try {
-      const stat = await fs.stat(resolved);
-      if (stat.isDirectory()) {
-        return res.json({
-          success: true,
-          stdout: '',
-          stderr: '',
-          exitCode: 0,
-          cwd: resolved
-        });
-      }
-    } catch (e) {
-      return res.json({
-        success: false,
-        stdout: '',
-        stderr: `cd: no such file or directory: ${targetDir}\n`,
-        exitCode: 1,
-        cwd: executionCwd
-      });
-    }
+  let executionCwd = WORKSPACE_ROOT;
+  if (reqCwd) {
+    const candidate = reqCwd.startsWith('~') ? path.join(os.homedir(), reqCwd.slice(1)) : reqCwd;
+    executionCwd = path.isAbsolute(candidate) ? candidate : path.resolve(WORKSPACE_ROOT, candidate);
   }
 
-  exec(command, { cwd: executionCwd, shell }, (error, stdout, stderr) => {
+  // Ensure executionCwd exists; fallback to WORKSPACE_ROOT if deleted
+  try {
+    const s = await fs.stat(executionCwd);
+    if (!s.isDirectory()) executionCwd = WORKSPACE_ROOT;
+  } catch {
+    executionCwd = WORKSPACE_ROOT;
+  }
+
+  // Shell probe to capture final CWD and preserve the child command's exit code
+  const wrappedCmd = isWindows
+    ? `${command}\r\n$__ec = $LASTEXITCODE; Write-Host "\`n__CWD__:$((Get-Location).Path)"; exit $__ec`
+    : `${command}\n__STATUS__=$?\nprintf "\\n__CWD__:%s" "$PWD"\nexit $__STATUS__`;
+
+  exec(wrappedCmd, { cwd: executionCwd, shell }, (error, stdout, stderr) => {
+    let finalCwd = executionCwd;
+    let cleanStdout = stdout || '';
+
+    const cwdMatch = cleanStdout.match(/\n__CWD__:(.*)$/);
+    if (cwdMatch) {
+      finalCwd = cwdMatch[1].trim() || executionCwd;
+      cleanStdout = cleanStdout.substring(0, cwdMatch.index);
+    }
+
     res.json({
       success: !error,
-      stdout: stdout || '',
+      stdout: cleanStdout,
       stderr: stderr || '',
       exitCode: error ? (error.code || 1) : 0,
-      cwd: executionCwd
+      cwd: finalCwd
     });
   });
 });

@@ -97,6 +97,13 @@ export interface UserProfile {
   provider: 'google' | 'github' | 'guest';
   isLoggedIn: boolean;
   subscriptionTier: 'Free' | 'Pro' | 'Enterprise';
+  sessionToken?: string;
+  autoAuthEnabled?: boolean;
+  connectedServices?: {
+    gemini?: { connected: boolean; status: string; account: string };
+    claude?: { connected: boolean; status: string; account: string };
+    codex?: { connected: boolean; status: string; account: string };
+  };
   linkedAccounts: {
     google?: { email: string; name: string; avatar: string; linkedAt: string };
     github?: { username: string; name: string; avatar: string; linkedAt: string };

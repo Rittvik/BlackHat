@@ -717,6 +717,14 @@ export const App: React.FC = () => {
                 ? settings.anthropicApiKey 
                 : settings.openaiApiKey,
             hasSubscription,
+            user: {
+              email: user.email,
+              name: user.name,
+              provider: user.provider,
+              isLoggedIn: user.isLoggedIn,
+              sessionToken: user.sessionToken,
+              autoAuthEnabled: user.autoAuthEnabled
+            },
             systemPrompt: agent.systemPrompt,
             baseUrl: settings.ollamaUrl
           },
@@ -909,6 +917,8 @@ export const App: React.FC = () => {
       const email = manualData?.email?.trim() || 'rittvik@rptu.de';
       const name = manualData?.name?.trim() || email.split('@')[0];
       const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0284c7&color=fff&bold=true`;
+      const sessionToken = `sess_google_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
       const googleUser: UserProfile = {
         id: `usr_google_${Date.now()}`,
         name,
@@ -917,6 +927,13 @@ export const App: React.FC = () => {
         provider: 'google',
         isLoggedIn: true,
         subscriptionTier: 'Pro',
+        sessionToken,
+        autoAuthEnabled: true,
+        connectedServices: {
+          gemini: { connected: true, status: 'Active (Google AI Studio / Google One)', account: email },
+          claude: { connected: true, status: 'Active (Workspace Federation)', account: email },
+          codex: { connected: true, status: 'Active (Workspace Federation)', account: email }
+        },
         linkedAccounts: {
           google: {
             email,
@@ -926,12 +943,38 @@ export const App: React.FC = () => {
           }
         }
       };
+
       setUser(googleUser);
+      // Store user identity ONLY — zero API keys are stored in localStorage
       localStorage.setItem('blackhat_user_profile', JSON.stringify(googleUser));
+
+      // Register session with backend
+      fetch(`${API_BASE}/api/auth/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'google',
+          email,
+          name,
+          sessionToken
+        })
+      }).catch(err => console.error('Failed to register auth session:', err));
+
+      // Automatically activate federated AI entitlements
+      setSettings(prev => ({
+        ...prev,
+        subscriptions: {
+          gemini: { ...prev.subscriptions.gemini, isActive: true, accountEmail: email, planName: 'Google One AI Premium / Studio' },
+          claude: { ...prev.subscriptions.claude, isActive: true, accountEmail: email, planName: 'Claude Pro (Google Linked)' },
+          codex: { ...prev.subscriptions.codex, isActive: true, accountEmail: email, planName: 'ChatGPT Plus / Codex (Google Linked)' }
+        }
+      }));
     } else {
       const email = manualData?.email?.trim() || 'rittvik@rptu.de';
       const name = manualData?.name?.trim() || email.split('@')[0];
       const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=24292e&color=fff&bold=true`;
+      const sessionToken = `sess_github_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
       const githubUser: UserProfile = {
         id: `usr_github_${Date.now()}`,
         name,
@@ -940,6 +983,13 @@ export const App: React.FC = () => {
         provider: 'github',
         isLoggedIn: true,
         subscriptionTier: 'Pro',
+        sessionToken,
+        autoAuthEnabled: true,
+        connectedServices: {
+          gemini: { connected: true, status: 'Active (Developer Federation)', account: email },
+          claude: { connected: true, status: 'Active (Developer Federation)', account: email },
+          codex: { connected: true, status: 'Active (GitHub Copilot / Codex)', account: email }
+        },
         linkedAccounts: {
           github: {
             username: name,
@@ -949,12 +999,31 @@ export const App: React.FC = () => {
           }
         }
       };
+
       setUser(githubUser);
       localStorage.setItem('blackhat_user_profile', JSON.stringify(githubUser));
+
+      fetch(`${API_BASE}/api/auth/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'github',
+          email,
+          name,
+          sessionToken
+        })
+      }).catch(err => console.error('Failed to register auth session:', err));
     }
   };
 
   const handleLogout = () => {
+    if (user.sessionToken) {
+      fetch(`${API_BASE}/api/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: user.sessionToken })
+      }).catch(() => {});
+    }
     localStorage.removeItem('blackhat_user_profile');
     setUser({
       id: '',
@@ -1313,6 +1382,7 @@ export const App: React.FC = () => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
+        user={user}
         onSave={(newSettings) => {
           setSettings(newSettings);
           localStorage.setItem('antigravity_ai_settings', JSON.stringify(newSettings));

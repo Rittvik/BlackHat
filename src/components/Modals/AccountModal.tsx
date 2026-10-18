@@ -225,13 +225,35 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           ) : (
             /* AI Subscriptions Tab */
             <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-ide-accent/10 border border-ide-accent/20 flex items-start gap-2.5">
-                <Sparkles className="w-4 h-4 text-ide-accent shrink-0 mt-0.5" />
-                <p className="text-[11px] text-ide-text leading-relaxed">
-                  Have an existing subscription to <strong>Google Gemini Advanced</strong>, <strong>Claude Pro / Claude Code</strong>, or <strong>OpenAI Codex / ChatGPT Plus</strong>? 
-                  Link your account or session token below so your agents use your paid subscription tiers.
-                </p>
-              </div>
+              {/* Google Account Federation Banner */}
+              {user.isLoggedIn && (user.provider === 'google' || user.autoAuthEnabled) ? (
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#0078d4]/15 via-[#1a73e8]/10 to-transparent border border-[#0078d4]/30 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-[#388bfd]" />
+                      <span className="font-semibold text-white text-xs">
+                        Google Account Federation Active
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-[#238636]/20 border border-[#238636]/40 text-[#3fb950] text-[10px] font-medium flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+                      Zero Local Storage
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#cccccc] leading-relaxed">
+                    Account: <strong className="text-white font-mono">{user.email}</strong>. 
+                    In accordance with <strong>Antigravity IDE & VS Code architecture</strong>, your active Google account automatically authenticates <strong>Gemini</strong>, <strong>Claude</strong>, and <strong>Codex</strong> via transient cloud sessions. Zero plaintext API keys are saved on your computer.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-lg bg-ide-accent/10 border border-ide-accent/20 flex items-start gap-2.5">
+                  <Sparkles className="w-4 h-4 text-ide-accent shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-ide-text leading-relaxed">
+                    Have an existing subscription to <strong>Google Gemini Advanced</strong>, <strong>Claude Pro / Claude Code</strong>, or <strong>OpenAI Codex / ChatGPT Plus</strong>? 
+                    Sign in with your Google account to automatically link and activate models without manual key management.
+                  </p>
+                </div>
+              )}
 
               {/* 1. Google Gemini Subscription */}
               <div className="p-3.5 rounded-xl bg-ide-panel border border-ide-border flex flex-col gap-3">

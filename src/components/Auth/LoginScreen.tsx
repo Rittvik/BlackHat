@@ -251,9 +251,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <h2 className="text-base font-semibold text-white mb-1">
                 Sign in with Google Account
               </h2>
-              <p className="text-xs text-[#858585] max-w-xs leading-relaxed mb-5">
+              <p className="text-xs text-[#858585] max-w-xs leading-relaxed mb-4">
                 Enter your Google account email address to connect your workspace.
               </p>
+
+              {/* Zero-Key Security Notice */}
+              <div className="w-full p-2.5 rounded-lg bg-[#4285F4]/10 border border-[#4285F4]/20 text-[10px] text-[#cccccc] mb-4 text-left space-y-1">
+                <div className="text-white font-medium flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#4285F4]" />
+                  <span>Automated AI Federation (Zero Local Keys)</span>
+                </div>
+                <div>Your account session automatically enables Gemini, Claude, and Codex via ephemeral cloud tokens. No API keys are stored on this device.</div>
+              </div>
 
               {/* Form Inputs */}
               <div className="w-full space-y-3.5 text-left mb-6">

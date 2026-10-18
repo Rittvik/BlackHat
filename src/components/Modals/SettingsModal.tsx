@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { X, Key, Cpu, Sparkles, Check, AlertCircle, ShieldCheck } from 'lucide-react';
-import { AISettings } from '../../types';
+import { AISettings, UserProfile } from '../../types';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   settings: AISettings;
+  user?: UserProfile;
   onSave: (settings: AISettings) => void;
 }
 
@@ -13,11 +14,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   settings,
+  user,
   onSave
 }) => {
   const [formData, setFormData] = useState<AISettings>({ ...settings });
   const [savedNotification, setSavedNotification] = useState(false);
   const [activeTab, setActiveTab] = useState<'free-models' | 'keys' | 'subscriptions'>('free-models');
+  const [showCustomOverrides, setShowCustomOverrides] = useState(false);
 
   if (!isOpen) return null;
 
@@ -176,59 +179,126 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {activeTab === 'keys' && (
             <>
-              {/* Gemini API Key */}
-              <div className="space-y-1">
-                <label className="font-medium text-ide-text flex items-center justify-between">
-                  <span>Google Gemini API Key</span>
-                  <span className="text-[10px] text-ide-muted font-normal">Optional (Simulation fallback if blank)</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    placeholder="AIzaSy..."
-                    value={formData.geminiApiKey}
-                    onChange={(e) => setFormData({ ...formData, geminiApiKey: e.target.value })}
-                    className="w-full pl-8 pr-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent font-mono text-xs"
-                  />
-                  <Key className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
-                </div>
-              </div>
+              {/* Google Account Auto-Auth & Zero-Local-Storage Banner */}
+              {user?.isLoggedIn && (user?.provider === 'google' || user?.autoAuthEnabled) ? (
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#0078d4]/15 via-[#1a73e8]/10 to-transparent border border-[#0078d4]/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-[#388bfd]" />
+                      <span className="font-semibold text-white text-xs">
+                        Connected via Google Account
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-[#238636]/20 border border-[#238636]/40 text-[#3fb950] text-[10px] font-medium flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+                      Auto-Authenticated
+                    </span>
+                  </div>
 
-              {/* Anthropic Claude API Key */}
-              <div className="space-y-1">
-                <label className="font-medium text-ide-text flex items-center justify-between">
-                  <span>Anthropic Claude API Key</span>
-                  <span className="text-[10px] text-ide-muted font-normal">sk-ant-...</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    placeholder="sk-ant-api03-..."
-                    value={formData.anthropicApiKey}
-                    onChange={(e) => setFormData({ ...formData, anthropicApiKey: e.target.value })}
-                    className="w-full pl-8 pr-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent font-mono text-xs"
-                  />
-                  <Key className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
-                </div>
-              </div>
+                  <p className="text-[11px] text-[#cccccc] leading-relaxed">
+                    Signed in as <span className="text-white font-mono font-medium">{user.email}</span>.
+                    Following the <strong className="text-white">Antigravity & VS Code security protocol</strong>, your models (Gemini, Claude, Codex) authenticate dynamically via transient cloud sessions.
+                  </p>
 
-              {/* OpenAI API Key */}
-              <div className="space-y-1">
-                <label className="font-medium text-ide-text flex items-center justify-between">
-                  <span>OpenAI / Codex API Key</span>
-                  <span className="text-[10px] text-ide-muted font-normal">sk-...</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    placeholder="sk-proj-..."
-                    value={formData.openaiApiKey}
-                    onChange={(e) => setFormData({ ...formData, openaiApiKey: e.target.value })}
-                    className="w-full pl-8 pr-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent font-mono text-xs"
-                  />
-                  <Key className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <div className="p-2 rounded bg-[#111111] border border-[#2b2b2b] flex flex-col gap-0.5">
+                      <span className="text-[10px] text-[#858585]">Google Gemini</span>
+                      <span className="text-[11px] text-[#3fb950] font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Auto-Linked
+                      </span>
+                    </div>
+                    <div className="p-2 rounded bg-[#111111] border border-[#2b2b2b] flex flex-col gap-0.5">
+                      <span className="text-[10px] text-[#858585]">Anthropic Claude</span>
+                      <span className="text-[11px] text-[#3fb950] font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Auto-Linked
+                      </span>
+                    </div>
+                    <div className="p-2 rounded bg-[#111111] border border-[#2b2b2b] flex flex-col gap-0.5">
+                      <span className="text-[10px] text-[#858585]">OpenAI Codex</span>
+                      <span className="text-[11px] text-[#3fb950] font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Auto-Linked
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between text-[10px] text-[#858585] border-t border-[#2b2b2b]/60">
+                    <span className="text-[#3fb950] flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Zero API keys stored on local disk
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomOverrides(!showCustomOverrides)}
+                      className="text-[#58a6ff] hover:underline cursor-pointer"
+                    >
+                      {showCustomOverrides ? 'Hide manual key override' : 'Custom BYOK override (Optional)'}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border text-xs text-ide-muted space-y-1">
+                  <div className="font-semibold text-white">Manual API Key Configuration</div>
+                  <div>Sign in with a Google Account to enable automatic zero-storage cloud authentication across models.</div>
+                </div>
+              )}
+
+              {/* Show Inputs if not Google-authenticated or if user explicitly toggled BYOK override */}
+              {(!user?.isLoggedIn || user?.provider !== 'google' || showCustomOverrides) && (
+                <>
+                  {/* Gemini API Key */}
+                  <div className="space-y-1">
+                    <label className="font-medium text-ide-text flex items-center justify-between">
+                      <span>Google Gemini API Key</span>
+                      <span className="text-[10px] text-ide-muted font-normal">Optional (Simulation fallback if blank)</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        placeholder="AIzaSy..."
+                        value={formData.geminiApiKey}
+                        onChange={(e) => setFormData({ ...formData, geminiApiKey: e.target.value })}
+                        className="w-full pl-8 pr-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent font-mono text-xs"
+                      />
+                      <Key className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
+                    </div>
+                  </div>
+
+                  {/* Anthropic Claude API Key */}
+                  <div className="space-y-1">
+                    <label className="font-medium text-ide-text flex items-center justify-between">
+                      <span>Anthropic Claude API Key</span>
+                      <span className="text-[10px] text-ide-muted font-normal">sk-ant-...</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        placeholder="sk-ant-api03-..."
+                        value={formData.anthropicApiKey}
+                        onChange={(e) => setFormData({ ...formData, anthropicApiKey: e.target.value })}
+                        className="w-full pl-8 pr-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent font-mono text-xs"
+                      />
+                      <Key className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
+                    </div>
+                  </div>
+
+                  {/* OpenAI API Key */}
+                  <div className="space-y-1">
+                    <label className="font-medium text-ide-text flex items-center justify-between">
+                      <span>OpenAI / Codex API Key</span>
+                      <span className="text-[10px] text-ide-muted font-normal">sk-...</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        placeholder="sk-proj-..."
+                        value={formData.openaiApiKey}
+                        onChange={(e) => setFormData({ ...formData, openaiApiKey: e.target.value })}
+                        className="w-full pl-8 pr-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent font-mono text-xs"
+                      />
+                      <Key className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Ollama Local URL */}
               <div className="space-y-1">

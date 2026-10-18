@@ -108,13 +108,16 @@ export interface ExtensionItem {
   description: string;
   version: string;
   publisher: string;
-  iconName: string; // lucide icon identifier
+  iconName?: string; // fallback lucide icon identifier
+  iconUrl?: string; // Open VSX icon URL
   downloads: string;
   rating: number;
-  category: 'AI & Agents' | 'Languages' | 'Themes' | 'Formatters' | 'Tools';
+  category: string;
   installed: boolean;
   enabled: boolean;
   tags: string[];
+  downloadUrl?: string;
+  verified?: boolean;
 }
 
 export interface TerminalEntry {

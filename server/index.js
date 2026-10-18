@@ -302,6 +302,36 @@ app.post('/api/agent/stop', (req, res) => {
   res.json({ success: false, message: `Agent ${agentId} was not running` });
 });
 
+// 5. Open VSX Marketplace Proxy Endpoint
+app.get('/api/extensions/openvsx', async (req, res) => {
+  try {
+    const { query = '', size = 25, sortBy = 'downloadCount', sortOrder = 'desc', category = '' } = req.query;
+    let url = `https://open-vsx.org/api/-/search?size=${size}&sortBy=${encodeURIComponent(sortBy)}&sortOrder=${encodeURIComponent(sortOrder)}`;
+    if (query) {
+      url += `&query=${encodeURIComponent(query)}`;
+    }
+    if (category && category !== 'All') {
+      url += `&category=${encodeURIComponent(category)}`;
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'BlackHat-IDE/1.0.0 (Open-VSX-Client)'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Open VSX responded with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json({ success: true, extensions: data.extensions || [], total: data.totalSize || 0 });
+  } catch (err) {
+    console.error('Open VSX proxy error:', err.message);
+    res.status(500).json({ success: false, error: err.message, extensions: [] });
+  }
+});
+
 // WebSocket Connection for Terminal & Real-Time Sync
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'connected', time: Date.now() }));

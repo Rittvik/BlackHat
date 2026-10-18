@@ -688,10 +688,26 @@ export const App: React.FC = () => {
     setSharedContextItems(prev => [newItem, ...prev]);
   };
 
-  // Extensions Store operations
+  // Extensions Store operations (Open VSX Marketplace Integration)
   const handleToggleInstallExtension = (extensionId: string) => {
     setExtensions(prev => prev.map(ext => 
       ext.id === extensionId ? { ...ext, installed: !ext.installed, enabled: true } : ext
+    ));
+  };
+
+  const handleInstallExtension = (ext: ExtensionItem) => {
+    setExtensions(prev => {
+      const exists = prev.find(e => e.id === ext.id);
+      if (exists) {
+        return prev.map(e => e.id === ext.id ? { ...e, installed: true, enabled: true } : e);
+      }
+      return [{ ...ext, installed: true, enabled: true }, ...prev];
+    });
+  };
+
+  const handleUninstallExtension = (extensionId: string) => {
+    setExtensions(prev => prev.map(ext => 
+      ext.id === extensionId ? { ...ext, installed: false } : ext
     ));
   };
 
@@ -978,6 +994,9 @@ export const App: React.FC = () => {
                 extensions={extensions}
                 onToggleInstall={handleToggleInstallExtension}
                 onToggleEnable={handleToggleEnableExtension}
+                onInstallExtension={handleInstallExtension}
+                onUninstallExtension={handleUninstallExtension}
+                apiBase={API_BASE}
               />
             )}
           </div>

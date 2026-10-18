@@ -414,6 +414,21 @@ if (!gotTheLock) {
     }
   });
 
+  // Clear App Cache and Session Storage
+  ipcMain.handle('clear-app-cache', async () => {
+    try {
+      if (mainWindow && mainWindow.webContents && mainWindow.webContents.session) {
+        await mainWindow.webContents.session.clearStorageData();
+        await mainWindow.webContents.session.clearCache();
+        console.log('[BlackHat] Electron app session and storage cache cleared.');
+        return true;
+      }
+    } catch (err) {
+      console.error('Failed to clear electron cache:', err);
+    }
+    return false;
+  });
+
   app.on('second-instance', () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();

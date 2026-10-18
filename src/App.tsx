@@ -80,7 +80,16 @@ export const GOOGLE_USER_RITTVIK: UserProfile = {
   }
 };
 
-const DEFAULT_USER: UserProfile = GOOGLE_USER_RITTVIK;
+export const DEFAULT_USER: UserProfile = {
+  id: '',
+  name: '',
+  email: '',
+  avatar: '',
+  provider: 'guest',
+  isLoggedIn: false,
+  subscriptionTier: 'Free',
+  linkedAccounts: {}
+};
 
 // Three Default Agents: ARCHITECT, DEVELOPER, TESTER (Configured with free AI models out of the box)
 const INITIAL_AGENTS: AgentInstance[] = [
@@ -272,31 +281,18 @@ export const App: React.FC = () => {
     }
   });
 
-  // User Profile Auth State - Active Rittvik Vashishtha Google Account
+  // User Profile Auth State - Fresh login screen by default
   const [user, setUser] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('blackhat_user_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (
-          !parsed.isLoggedIn || 
-          parsed.id === 'usr_guest' || 
-          parsed.provider === 'guest' || 
-          parsed.email?.includes('alex.rivera') || 
-          parsed.name?.includes('Alex Rivera') ||
-          parsed.email === 'guest@blackhat.ide' || 
-          parsed.email === 'developer@blackhat.ide'
-        ) {
-          localStorage.setItem('blackhat_user_profile', JSON.stringify(GOOGLE_USER_RITTVIK));
-          return GOOGLE_USER_RITTVIK;
+        if (parsed && parsed.isLoggedIn && parsed.email) {
+          return parsed;
         }
-        return parsed;
       }
-      localStorage.setItem('blackhat_user_profile', JSON.stringify(GOOGLE_USER_RITTVIK));
-      return GOOGLE_USER_RITTVIK;
-    } catch {
-      return GOOGLE_USER_RITTVIK;
-    }
+    } catch {}
+    return DEFAULT_USER;
   });
 
   // AI Settings State
@@ -888,25 +884,47 @@ export const App: React.FC = () => {
   };
 
   // User Auth operations
-  const handleLogin = (provider: 'google' | 'github') => {
+  const handleLogin = (provider: 'google' | 'github', manualData?: { email?: string; name?: string }) => {
     if (provider === 'google') {
-      setUser(GOOGLE_USER_RITTVIK);
-      localStorage.setItem('blackhat_user_profile', JSON.stringify(GOOGLE_USER_RITTVIK));
+      const email = manualData?.email?.trim() || 'rittvik@rptu.de';
+      const name = manualData?.name?.trim() || email.split('@')[0];
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0284c7&color=fff&bold=true`;
+      const googleUser: UserProfile = {
+        id: `usr_google_${Date.now()}`,
+        name,
+        email,
+        avatar: avatarUrl,
+        provider: 'google',
+        isLoggedIn: true,
+        subscriptionTier: 'Pro',
+        linkedAccounts: {
+          google: {
+            email,
+            name,
+            avatar: avatarUrl,
+            linkedAt: new Date().toISOString()
+          }
+        }
+      };
+      setUser(googleUser);
+      localStorage.setItem('blackhat_user_profile', JSON.stringify(googleUser));
     } else {
+      const email = manualData?.email?.trim() || 'rittvik@rptu.de';
+      const name = manualData?.name?.trim() || email.split('@')[0];
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=24292e&color=fff&bold=true`;
       const githubUser: UserProfile = {
-        id: 'usr_github_rittvik',
-        name: 'Rittvik',
-        email: 'rittvik@rptu.de',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        id: `usr_github_${Date.now()}`,
+        name,
+        email,
+        avatar: avatarUrl,
         provider: 'github',
         isLoggedIn: true,
         subscriptionTier: 'Pro',
         linkedAccounts: {
-          google: GOOGLE_USER_RITTVIK.linkedAccounts.google,
           github: {
-            username: 'Rittvik',
-            name: 'Rittvik Vashishtha',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            username: name,
+            name,
+            avatar: avatarUrl,
             linkedAt: new Date().toISOString()
           }
         }

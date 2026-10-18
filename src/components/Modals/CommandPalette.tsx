@@ -3,13 +3,10 @@ import {
   Search, 
   Terminal, 
   FileCode, 
-  Play, 
   Sparkles, 
-  X, 
   Plus, 
   Blocks, 
   User, 
-  Share2,
   Bot
 } from 'lucide-react';
 
@@ -52,58 +49,58 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const commands: CommandItem[] = [
     {
       id: 'run-all-agents',
-      title: 'Run Architect, Developer & Tester Concurrently',
-      subtitle: 'Dispatch parallel reasoning, code implementation, and testing workflows',
-      icon: <Sparkles className="w-4 h-4 text-ide-emerald" />,
+      title: 'Run Architect, Developer & Tester',
+      subtitle: 'Dispatch parallel reasoning, implementation, and test workflows',
+      icon: <Sparkles className="w-4 h-4 text-[#3fb950]" />,
       action: onRunBothAgents
     },
     {
       id: 'open-extensions',
-      title: 'Open Extensions Store & Marketplace',
-      subtitle: 'Browse AI companions, language servers, themes, and reverse engineering tools',
-      icon: <Blocks className="w-4 h-4 text-ide-accent" />,
+      title: 'Extensions: Show Extensions',
+      subtitle: 'Browse installed and marketplace extensions',
+      icon: <Blocks className="w-4 h-4 text-[#58a6ff]" />,
       action: () => onOpenExtensions && onOpenExtensions()
     },
     {
       id: 'open-account',
-      title: 'Accounts & AI Subscriptions',
-      subtitle: 'Google / GitHub login and Gemini, Claude, Codex subscription management',
-      icon: <User className="w-4 h-4 text-ide-cyan" />,
+      title: 'Accounts: Manage Subscriptions & Login',
+      subtitle: 'Google, GitHub, Gemini, Claude, and Codex accounts',
+      icon: <User className="w-4 h-4 text-[#bc8cff]" />,
       action: () => onOpenAccount && onOpenAccount()
     },
     {
       id: 'add-agent',
-      title: 'Create New Custom Agent',
-      subtitle: 'Add DevOps, Security Auditor, or specialized role agents to the studio',
-      icon: <Bot className="w-4 h-4 text-ide-purple" />,
+      title: 'Agents: Create Custom Agent',
+      subtitle: 'Add a new specialist agent with custom system prompt',
+      icon: <Bot className="w-4 h-4 text-[#818cf8]" />,
       action: () => onOpenAddAgent && onOpenAddAgent()
     },
     {
       id: 'save-file',
-      title: 'Save Active File',
-      subtitle: 'Write changes to disk (Cmd + S)',
-      icon: <FileCode className="w-4 h-4 text-ide-cyan" />,
+      title: 'File: Save',
+      subtitle: 'Save active document to disk',
+      icon: <FileCode className="w-4 h-4 text-[#58a6ff]" />,
       action: onSaveFile
     },
     {
       id: 'toggle-terminal',
-      title: 'Toggle Integrated Terminal',
-      subtitle: 'Open or collapse bottom shell',
-      icon: <Terminal className="w-4 h-4 text-ide-amber" />,
+      title: 'View: Toggle Terminal',
+      subtitle: 'Show or hide integrated terminal',
+      icon: <Terminal className="w-4 h-4 text-[#d29922]" />,
       action: onToggleTerminal
     },
     {
       id: 'new-file',
-      title: 'Create New File in Workspace',
-      subtitle: 'Add a new file to the project',
-      icon: <Plus className="w-4 h-4 text-ide-purple" />,
+      title: 'File: New File',
+      subtitle: 'Create a new file in workspace',
+      icon: <Plus className="w-4 h-4 text-[#3fb950]" />,
       action: onNewFile
     },
     {
       id: 'open-settings',
-      title: 'Configure AI Models & Keys',
-      subtitle: 'Set Gemini, Anthropic, OpenAI, or Ollama credentials',
-      icon: <Search className="w-4 h-4 text-ide-accent" />,
+      title: 'Preferences: AI Settings',
+      subtitle: 'Configure API keys and model parameters',
+      icon: <Search className="w-4 h-4 text-[#858585]" />,
       action: onOpenSettings
     }
   ];
@@ -138,30 +135,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/60 backdrop-blur-sm select-none p-4">
-      <div className="w-full max-w-lg bg-ide-sidebar border border-ide-border rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div 
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50 backdrop-blur-[2px] select-none p-4"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-xl bg-[#1e1e1e] border border-[#333333] rounded-lg shadow-2xl overflow-hidden flex flex-col font-sans"
+      >
         {/* Input */}
-        <div className="h-12 px-3.5 flex items-center gap-2 border-b border-ide-border bg-ide-panel">
-          <Search className="w-4 h-4 text-ide-muted" />
+        <div className="h-10 px-3 flex items-center gap-2 border-b border-[#2b2b2b] bg-[#1e1e1e]">
+          <Search className="w-4 h-4 text-[#858585]" />
           <input
             type="text"
             autoFocus
-            placeholder="Type a command or action (e.g. 'extensions', 'account', 'run all', 'save')..."
+            placeholder="Type a command or action..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-xs text-white placeholder-ide-muted/50 focus:outline-none"
+            className="flex-1 bg-transparent text-xs text-white placeholder-[#666666] focus:outline-none"
           />
-          <kbd className="px-1.5 py-0.5 rounded bg-ide-card border border-ide-border text-[10px] text-ide-muted font-mono">
+          <kbd className="px-1.5 py-0.5 rounded bg-[#252525] border border-[#333333] text-[10px] text-[#858585] font-mono">
             ESC
           </kbd>
         </div>
 
         {/* Command List */}
-        <div className="max-h-80 overflow-y-auto p-1.5 space-y-1">
+        <div className="max-h-72 overflow-y-auto p-1 space-y-0.5">
           {filtered.length === 0 ? (
-            <div className="p-4 text-center text-xs text-ide-muted">
-              No matching commands
+            <div className="p-4 text-center text-xs text-[#858585]">
+              No commands found
             </div>
           ) : (
             filtered.map((cmd, idx) => (
@@ -171,26 +174,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   cmd.action();
                   onClose();
                 }}
-                className={`px-3 py-2 rounded-lg flex items-center justify-between cursor-pointer text-xs transition-colors ${
+                className={`px-3 py-1.5 rounded flex items-center justify-between cursor-pointer text-xs transition-colors ${
                   idx === selectedIndex 
-                    ? 'bg-ide-accent text-white font-medium' 
-                    : 'text-ide-text hover:bg-ide-hover'
+                    ? 'bg-[#0078d4] text-white' 
+                    : 'text-[#cccccc] hover:bg-[rgba(255,255,255,0.04)]'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-1.5 rounded-md ${idx === selectedIndex ? 'bg-white/20' : 'bg-ide-darkest border border-ide-border'}`}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="shrink-0">
                     {cmd.icon}
                   </div>
-                  <div>
-                    <div className="font-medium">{cmd.title}</div>
+                  <div className="truncate">
+                    <div className="font-normal truncate">{cmd.title}</div>
                     {cmd.subtitle && (
-                      <div className={`text-[10px] ${idx === selectedIndex ? 'text-white/80' : 'text-ide-muted'}`}>
+                      <div className={`text-[10px] truncate ${idx === selectedIndex ? 'text-white/80' : 'text-[#858585]'}`}>
                         {cmd.subtitle}
                       </div>
                     )}
                   </div>
                 </div>
-                <span className={`text-[10px] font-mono ${idx === selectedIndex ? 'text-white/80' : 'text-ide-muted'}`}>
+                <span className={`text-[10px] font-mono shrink-0 ml-2 ${idx === selectedIndex ? 'text-white/80' : 'text-[#858585]'}`}>
                   ↵
                 </span>
               </div>

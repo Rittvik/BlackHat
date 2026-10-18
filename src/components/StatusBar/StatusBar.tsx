@@ -3,12 +3,10 @@ import {
   GitBranch, 
   Terminal, 
   Settings, 
-  CheckCircle2, 
-  Zap, 
   Share2, 
   Blocks,
   User,
-  Sparkles
+  Bell
 } from 'lucide-react';
 import { AgentInstance, UserProfile } from '../../types';
 
@@ -36,31 +34,33 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   installedExtensionsCount
 }) => {
   return (
-    <div className="h-6 px-2.5 flex items-center justify-between bg-ide-darkest border-t border-ide-border text-[11px] text-ide-muted select-none shrink-0">
+    <div className="h-[22px] px-2.5 flex items-center justify-between bg-[#181818] border-t border-[#2b2b2b] text-[11px] text-[#858585] select-none shrink-0 font-sans">
       {/* Left items */}
       <div className="flex items-center gap-3">
         {/* Branch */}
         <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-          <GitBranch className="w-3 h-3 text-ide-muted" />
-          <span>main</span>
+          <GitBranch className="w-3 h-3 text-[#858585]" />
+          <span>main*</span>
         </div>
 
         {/* Live Multi-Agent Status */}
-        <div className="flex items-center gap-2 border-l border-ide-border/80 pl-3">
+        <div className="hidden sm:flex items-center gap-2 border-l border-[#2e2e2e] pl-2.5">
           {agents.map((agent) => {
             const isBusy = agent.status !== 'idle';
             return (
               <div 
                 key={agent.id}
-                className={`flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] ${
+                className={`flex items-center gap-1 text-[10px] ${
                   isBusy 
-                    ? 'bg-ide-accent/20 text-ide-accent border border-ide-accent/40 animate-pulse-subtle' 
-                    : 'text-ide-muted/80'
+                    ? 'text-white' 
+                    : 'text-[#858585]'
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${isBusy ? 'bg-ide-emerald animate-ping' : 'bg-ide-muted/60'}`} />
-                <span className="font-medium text-white">{agent.name.split(' ')[0]}:</span>
-                <span className="capitalize">{agent.status.replace('_', ' ')}</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isBusy ? 'bg-[#3fb950] animate-pulse' : 'bg-[#555555]'
+                }`} />
+                <span className="font-normal">{agent.name.split(' ')[0]}:</span>
+                <span className="capitalize">{agent.status === 'executing_tool' ? 'tool' : agent.status}</span>
               </div>
             );
           })}
@@ -68,28 +68,28 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         {/* Context Bus indicator */}
         {sharedContextCount > 0 && (
-          <div className="hidden md:flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] bg-ide-card border border-ide-border text-ide-cyan">
+          <div className="hidden md:flex items-center gap-1 text-[10px] text-[#858585] hover:text-[#cccccc] cursor-pointer">
             <Share2 className="w-2.5 h-2.5" />
-            <span>{sharedContextCount} Contexts</span>
+            <span>{sharedContextCount} context</span>
           </div>
         )}
       </div>
 
       {/* Right items */}
       <div className="flex items-center gap-3">
-        {/* User Account Status */}
+        {/* User Account */}
         <button
           onClick={onOpenAccountModal}
           className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors"
         >
-          <User className="w-3 h-3 text-ide-muted" />
-          <span>{user.isLoggedIn ? `${user.name} (${user.provider})` : 'Guest'}</span>
+          <User className="w-3 h-3 text-[#858585]" />
+          <span>{user.isLoggedIn ? user.name : 'Sign In'}</span>
         </button>
 
         {/* Extensions active */}
-        <div className="flex items-center gap-1 text-ide-muted">
+        <div className="flex items-center gap-1 text-[#858585]">
           <Blocks className="w-3 h-3" />
-          <span>{installedExtensionsCount} Ext</span>
+          <span>{installedExtensionsCount}</span>
         </div>
 
         {/* Language */}
@@ -97,7 +97,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           {activeLanguage}
         </span>
 
-        {/* Encoding */}
+        {/* Spaces & Encoding */}
+        <span className="hidden sm:inline hover:text-white cursor-pointer transition-colors">
+          Spaces: 2
+        </span>
         <span className="hover:text-white cursor-pointer transition-colors">
           UTF-8
         </span>
@@ -106,11 +109,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         <button
           onClick={onToggleTerminal}
           className={`flex items-center gap-1 hover:text-white cursor-pointer transition-colors ${
-            isTerminalOpen ? 'text-ide-accent font-medium' : ''
+            isTerminalOpen ? 'text-white' : ''
           }`}
         >
           <Terminal className="w-3 h-3" />
-          <span>Terminal</span>
         </button>
 
         {/* Settings */}

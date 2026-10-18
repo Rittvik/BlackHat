@@ -2,12 +2,12 @@ import React from 'react';
 import { 
   Files, 
   Search, 
+  GitBranch, 
+  Blocks, 
+  Bot, 
   Terminal, 
   Settings, 
-  Sparkles, 
-  Blocks, 
-  User, 
-  LogOut 
+  User 
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 
@@ -35,90 +35,81 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   installedExtensionsCount
 }) => {
   return (
-    <div className="w-12 h-full flex flex-col justify-between bg-ide-darkest border-r border-ide-border select-none py-2 shrink-0">
+    <div className="w-[48px] h-full flex flex-col justify-between bg-[#181818] border-r border-[#2b2b2b] select-none shrink-0 z-10">
       {/* Top action icons */}
-      <div className="flex flex-col items-center gap-2">
-        {/* Antigravity Logo / Command Palette Trigger */}
-        <button
-          onClick={onOpenCommandPalette}
-          title="Antigravity Command Palette (Cmd + K)"
-          className="w-8 h-8 rounded-lg bg-ide-accent/20 hover:bg-ide-accent/30 text-ide-accent flex items-center justify-center mb-2 border border-ide-accent/40 transition-colors shadow-sm"
-        >
-          <Sparkles className="w-4 h-4 fill-current" />
-        </button>
-
+      <div className="flex flex-col items-center">
         {/* Explorer */}
         <button
           title="Explorer (Files)"
           onClick={() => onSelectView('explorer')}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors relative ${
+          className={`w-full h-12 flex items-center justify-center transition-colors relative group ${
             activeView === 'explorer'
-              ? 'text-white bg-ide-card border-l-2 border-ide-accent'
-              : 'text-ide-muted hover:text-white hover:bg-ide-card'
+              ? 'text-white border-l-2 border-[#0078d4]'
+              : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
           }`}
         >
-          <Files className="w-4 h-4" />
+          <Files className="w-5 h-5 stroke-[1.6]" />
         </button>
 
         {/* Extensions Store */}
         <button
-          title="Extensions Store (Marketplace)"
+          title="Extensions Store"
           onClick={() => onSelectView('extensions')}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors relative ${
+          className={`w-full h-12 flex items-center justify-center transition-colors relative group ${
             activeView === 'extensions'
-              ? 'text-white bg-ide-card border-l-2 border-ide-accent'
-              : 'text-ide-muted hover:text-white hover:bg-ide-card'
+              ? 'text-white border-l-2 border-[#0078d4]'
+              : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
           }`}
         >
-          <Blocks className="w-4 h-4" />
+          <Blocks className="w-5 h-5 stroke-[1.6]" />
           {installedExtensionsCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-ide-accent" />
+            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-[#0078d4]" />
           )}
         </button>
 
         {/* Integrated Terminal Toggle */}
         <button
-          title="Integrated Terminal"
+          title="Toggle Terminal (`)"
           onClick={onToggleTerminal}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+          className={`w-full h-12 flex items-center justify-center transition-colors border-l-2 border-transparent ${
             isTerminalOpen
-              ? 'text-ide-accent bg-ide-card'
-              : 'text-ide-muted hover:text-white hover:bg-ide-card'
+              ? 'text-white'
+              : 'text-[#858585] hover:text-[#cccccc]'
           }`}
         >
-          <Terminal className="w-4 h-4" />
+          <Terminal className="w-5 h-5 stroke-[1.6]" />
         </button>
       </div>
 
       {/* Bottom action icons */}
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center mb-1">
         {/* User Account / Login */}
         <button
-          title={user.isLoggedIn ? `Logged in as ${user.name} (${user.provider})` : "Sign In with Google or GitHub"}
+          title={user.isLoggedIn ? `Account: ${user.name} (${user.provider})` : "Sign In with Google or GitHub"}
           onClick={onOpenAccountModal}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-ide-muted hover:text-white hover:bg-ide-card transition-colors relative group"
+          className="w-full h-12 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors relative border-l-2 border-transparent"
         >
           {user.isLoggedIn && user.avatar ? (
-            <img 
-              src={user.avatar} 
-              alt={user.name} 
-              className="w-6 h-6 rounded-full border border-ide-accent/60"
-            />
+            <div className="relative">
+              <img 
+                src={user.avatar} 
+                alt={user.name} 
+                className="w-6 h-6 rounded-full border border-[#3c3c3c] object-cover"
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-[#181818] bg-[#2ea043]" />
+            </div>
           ) : (
-            <User className="w-4 h-4" />
+            <User className="w-5 h-5 stroke-[1.6]" />
           )}
-          <span className={`absolute bottom-1 right-1 w-2 h-2 rounded-full border-2 border-ide-darkest ${
-            user.isLoggedIn ? 'bg-ide-emerald' : 'bg-ide-muted/50'
-          }`} />
         </button>
 
         {/* Settings */}
         <button
-          title="AI Settings & Keys"
+          title="Manage AI Settings & Keys"
           onClick={onOpenSettings}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-ide-muted hover:text-white hover:bg-ide-card transition-colors"
+          className="w-full h-12 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors border-l-2 border-transparent"
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-5 h-5 stroke-[1.6]" />
         </button>
       </div>
     </div>

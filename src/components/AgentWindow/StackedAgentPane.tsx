@@ -11,13 +11,9 @@ import {
   CheckCircle2, 
   Copy, 
   FileCode, 
-  Sparkles, 
   Share2,
   Check,
-  CheckSquare,
-  Shield,
-  Layers,
-  ArrowRight
+  ArrowUp
 } from 'lucide-react';
 import { AgentInstance, AISettings, AgentRole } from '../../types';
 
@@ -78,7 +74,7 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
   const handleShareContext = (msgId: string, content: string) => {
     if (!onShareToContextBus) return;
     const type = agent.role === 'ARCHITECT' ? 'plan' : agent.role === 'TESTER' ? 'test' : 'code';
-    const title = `${agent.name} Output (${type.toUpperCase()})`;
+    const title = `${agent.name} (${type.toUpperCase()})`;
     onShareToContextBus(title, content, type);
     setSharedMsgId(msgId);
     setTimeout(() => setSharedMsgId(null), 1500);
@@ -88,25 +84,25 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
     switch (role) {
       case 'ARCHITECT':
         return (
-          <span className="px-1.5 py-0.2 rounded text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold tracking-wider">
+          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#818cf8]/15 text-[#818cf8] border border-[#818cf8]/25 font-medium tracking-wide">
             ARCHITECT
           </span>
         );
       case 'DEVELOPER':
         return (
-          <span className="px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold tracking-wider">
+          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#58a6ff]/15 text-[#58a6ff] border border-[#58a6ff]/25 font-medium tracking-wide">
             DEVELOPER
           </span>
         );
       case 'TESTER':
         return (
-          <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold tracking-wider">
+          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#2ea043]/15 text-[#3fb950] border border-[#2ea043]/25 font-medium tracking-wide">
             TESTER
           </span>
         );
       default:
         return (
-          <span className="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold tracking-wider">
+          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#bc8cff]/15 text-[#bc8cff] border border-[#bc8cff]/25 font-medium tracking-wide">
             {role}
           </span>
         );
@@ -117,63 +113,46 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
     switch (agent.status) {
       case 'thinking':
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-ide-amber/20 text-ide-amber border border-ide-amber/30 animate-pulse-subtle">
-            <BrainCircuit className="w-3 h-3 animate-spin" />
+          <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] text-[#d29922]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#d29922] animate-pulse" />
             Thinking
           </span>
         );
       case 'executing_tool':
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-ide-purple/20 text-ide-purple border border-ide-purple/30 animate-pulse-subtle">
+          <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] text-[#bc8cff]">
             <Wrench className="w-3 h-3 animate-spin" />
             Tool Calling
           </span>
         );
       case 'streaming':
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-ide-emerald/20 text-ide-emerald border border-ide-emerald/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-ide-emerald animate-ping" />
+          <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] text-[#3fb950]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2ea043] animate-ping" />
             Streaming
           </span>
         );
       case 'error':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-ide-rose/20 text-ide-rose border border-ide-rose/30">
+          <span className="px-1.5 py-0.2 rounded text-[10px] text-[#f85149]">
             Error
           </span>
         );
       default:
-        return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-ide-panel text-ide-muted border border-ide-border">
-            Idle
-          </span>
-        );
+        return null;
     }
   };
 
-  const isSubscriptionActive = 
-    (agent.provider === 'gemini' && settings.subscriptions.gemini.isActive) ||
-    (agent.provider === 'anthropic' && settings.subscriptions.claude.isActive) ||
-    (agent.provider === 'openai' && settings.subscriptions.codex.isActive);
-
   return (
-    <div className="w-full h-full flex flex-col bg-ide-panel select-text relative overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[#181818] select-text relative overflow-hidden">
       {/* Agent Header */}
-      <div className="h-9 px-3 flex items-center justify-between bg-ide-sidebar border-b border-ide-border select-none shrink-0">
+      <div className="h-[35px] px-3 flex items-center justify-between bg-[#181818] border-b border-[#2b2b2b] select-none shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <div className={`w-5 h-5 rounded-md flex items-center justify-center text-white shrink-0 ${agent.avatarColor}`}>
-            <Bot className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-xs font-semibold text-white tracking-wide truncate">
+          <span className="text-xs font-medium text-white truncate">
             {agent.name}
           </span>
           {getRoleBadge(agent.role)}
           {getStatusBadge()}
-          {isSubscriptionActive && (
-            <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] bg-ide-accent/20 text-ide-accent border border-ide-accent/30 font-medium">
-              <Sparkles className="w-2.5 h-2.5" /> Subscribed
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -184,7 +163,7 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
               const [prov, mod] = e.target.value.split(':');
               onSelectModel(mod, prov);
             }}
-            className="text-[10px] bg-ide-card border border-ide-border text-ide-text rounded px-1.5 py-0.5 focus:outline-none hover:border-ide-accent cursor-pointer"
+            className="text-[11px] bg-[#222222] border border-[#2b2b2b] text-[#cccccc] rounded px-2 py-0.5 focus:outline-none hover:border-[#383838] cursor-pointer"
           >
             <option value="gemini:gemini-2.5-pro">Gemini 2.5 Pro</option>
             <option value="gemini:gemini-2.5-flash">Gemini 2.5 Flash</option>
@@ -198,24 +177,24 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
             <button
               title="Stop Agent"
               onClick={onStop}
-              className="p-1 rounded bg-ide-rose/20 hover:bg-ide-rose/30 text-ide-rose border border-ide-rose/40"
+              className="p-1 rounded bg-[#f85149]/20 hover:bg-[#f85149]/30 text-[#f85149]"
             >
               <Square className="w-3 h-3 fill-current" />
             </button>
           ) : (
             <button
-              title="Clear Conversation"
+              title="Clear Chat"
               onClick={onClear}
-              className="p-1 rounded hover:bg-ide-hover text-ide-muted hover:text-white transition-colors"
+              className="p-1 rounded hover:bg-[#252525] text-[#858585] hover:text-[#cccccc] transition-colors"
             >
               <Trash2 className="w-3 h-3" />
             </button>
           )}
 
           <button
-            title={isMaximized ? "Restore Split" : "Maximize Pane"}
+            title={isMaximized ? "Restore Split" : "Maximize"}
             onClick={onToggleMaximize}
-            className="p-1 rounded hover:bg-ide-hover text-ide-muted hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-[#252525] text-[#858585] hover:text-[#cccccc] transition-colors"
           >
             {isMaximized ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
           </button>
@@ -225,72 +204,64 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
       {/* Messages Scroll Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 font-sans text-xs">
         {agent.messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4 text-ide-muted select-none">
-            <div className={`w-10 h-10 rounded-xl ${agent.avatarColor} text-white flex items-center justify-center mb-2 shadow-lg`}>
-              <Bot className="w-6 h-6" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-4 text-[#858585] select-none">
+            <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2b2b2b] text-[#58a6ff] flex items-center justify-center mb-2">
+              <Bot className="w-4 h-4" />
             </div>
-            <div className="font-semibold text-white text-xs mb-1">
-              {agent.name} is Online
+            <div className="font-medium text-white text-xs mb-1">
+              {agent.name}
             </div>
-            <p className="text-[11px] max-w-xs text-ide-muted leading-relaxed mb-3">
+            <p className="text-[11px] max-w-xs text-[#858585] leading-relaxed mb-3">
               {agent.description}
             </p>
             <div className="flex flex-wrap gap-1.5 justify-center max-w-xs">
               {agent.role === 'ARCHITECT' && (
                 <>
                   <button
-                    onClick={() => onSendMessage(`Design high-level architecture and component structure for BlackHat IDE`)}
-                    className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
+                    onClick={() => onSendMessage(`Design high-level architecture and blueprint for this project`)}
+                    className="px-2 py-1 bg-[#222222] hover:bg-[#282828] border border-[#2b2b2b] rounded text-[10px] text-[#cccccc] transition-colors"
                   >
-                    📐 Design System Architecture
+                    Blueprint Architecture
                   </button>
                   <button
-                    onClick={() => onSendMessage(`Create a task decomposition plan for Developer and Tester agents`)}
-                    className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
+                    onClick={() => onSendMessage(`Create a task breakdown plan for Developer and Tester agents`)}
+                    className="px-2 py-1 bg-[#222222] hover:bg-[#282828] border border-[#2b2b2b] rounded text-[10px] text-[#cccccc] transition-colors"
                   >
-                    📋 Task Decomposition Plan
+                    Task Handoff Plan
                   </button>
                 </>
               )}
               {agent.role === 'DEVELOPER' && (
                 <>
                   <button
-                    onClick={() => onSendMessage(`Inspect active project files and implement core functionality`)}
-                    className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
+                    onClick={() => onSendMessage(`Implement the core code features and run required files`)}
+                    className="px-2 py-1 bg-[#222222] hover:bg-[#282828] border border-[#2b2b2b] rounded text-[10px] text-[#cccccc] transition-colors"
                   >
-                    💻 Implement Code & Features
+                    Implement Features
                   </button>
                   <button
-                    onClick={() => onSendMessage(`Refactor server/index.js and verify tool calls`)}
-                    className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
+                    onClick={() => onSendMessage(`Inspect project files and refactor key modules`)}
+                    className="px-2 py-1 bg-[#222222] hover:bg-[#282828] border border-[#2b2b2b] rounded text-[10px] text-[#cccccc] transition-colors"
                   >
-                    ⚡ Refactor Backend Endpoints
+                    Refactor Code
                   </button>
                 </>
               )}
               {agent.role === 'TESTER' && (
                 <>
                   <button
-                    onClick={() => onSendMessage(`Generate comprehensive test suite and validate edge cases`)}
-                    className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
+                    onClick={() => onSendMessage(`Generate test suite and verify boundary conditions`)}
+                    className="px-2 py-1 bg-[#222222] hover:bg-[#282828] border border-[#2b2b2b] rounded text-[10px] text-[#cccccc] transition-colors"
                   >
-                    🧪 Run QA & Unit Tests
+                    Run QA Verification
                   </button>
                   <button
-                    onClick={() => onSendMessage(`Audit code security and error recovery boundaries`)}
-                    className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
+                    onClick={() => onSendMessage(`Audit code resilience and edge case errors`)}
+                    className="px-2 py-1 bg-[#222222] hover:bg-[#282828] border border-[#2b2b2b] rounded text-[10px] text-[#cccccc] transition-colors"
                   >
-                    🛡️ Security & Boundary Audit
+                    Edge Case Audit
                   </button>
                 </>
-              )}
-              {agent.role === 'CUSTOM' && (
-                <button
-                  onClick={() => onSendMessage(`Review workspace status and execute assigned role responsibilities`)}
-                  className="px-2 py-1 bg-ide-card hover:bg-ide-hover border border-ide-border rounded text-[10px] text-ide-text hover:border-ide-accent transition-colors"
-                >
-                  🚀 Start Specialist Tasks
-                </button>
               )}
             </div>
           </div>
@@ -299,20 +270,20 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
             <div key={msg.id} className="space-y-1.5">
               {msg.role === 'user' ? (
                 <div className="flex justify-end">
-                  <div className="max-w-[85%] bg-ide-card border border-ide-border px-3 py-2 rounded-xl text-white text-xs leading-relaxed shadow-sm">
+                  <div className="max-w-[85%] bg-[#222222] border border-[#2e2e2e] px-3 py-2 rounded-lg text-white text-xs leading-relaxed">
                     {msg.content}
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2 text-ide-text">
-                  {/* Thought stream card */}
+                <div className="space-y-2 text-[#cccccc]">
+                  {/* Thought stream fold */}
                   {msg.thoughts && msg.thoughts.length > 0 && (
-                    <details className="bg-ide-sidebar/90 border border-ide-border/60 rounded-lg p-2 text-[11px] text-ide-muted">
-                      <summary className="font-medium text-ide-muted/90 cursor-pointer flex items-center gap-1.5 select-none hover:text-white">
-                        <BrainCircuit className="w-3.5 h-3.5 text-ide-amber" />
-                        <span>Reasoning & Context Synthesis ({msg.thoughts.length} steps)</span>
+                    <details className="bg-[#1c1c1c] border border-[#282828] rounded-md p-2 text-[11px] text-[#858585]">
+                      <summary className="font-medium text-[#9d9d9d] cursor-pointer flex items-center gap-1.5 select-none hover:text-white">
+                        <BrainCircuit className="w-3.5 h-3.5 text-[#d29922]" />
+                        <span>Reasoning ({msg.thoughts.length} steps)</span>
                       </summary>
-                      <div className="mt-2 space-y-1 pl-4 border-l border-ide-amber/30 text-[11px] text-ide-text/80 font-mono">
+                      <div className="mt-1.5 space-y-1 pl-3 border-l border-[#333333] text-[11px] text-[#cccccc] font-mono">
                         {msg.thoughts.map((t, idx) => (
                           <div key={idx}>• {t}</div>
                         ))}
@@ -324,27 +295,27 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
                     <div className="space-y-1.5">
                       {msg.toolCalls.map((tc) => (
-                        <div key={tc.id} className="bg-ide-darkest border border-ide-border rounded-lg p-2 text-[11px]">
-                          <div className="flex items-center justify-between text-ide-muted mb-1">
-                            <span className="flex items-center gap-1 text-ide-purple font-mono font-medium">
+                        <div key={tc.id} className="bg-[#141414] border border-[#282828] rounded-md p-2 text-[11px]">
+                          <div className="flex items-center justify-between text-[#858585] mb-1">
+                            <span className="flex items-center gap-1 text-[#bc8cff] font-mono font-medium">
                               <Wrench className="w-3 h-3" />
                               {tc.name}
                             </span>
                             {tc.result ? (
-                              <span className="text-ide-emerald flex items-center gap-1 text-[10px]">
-                                <CheckCircle2 className="w-3 h-3" /> Completed
+                              <span className="text-[#3fb950] flex items-center gap-1 text-[10px]">
+                                <CheckCircle2 className="w-3 h-3" /> Done
                               </span>
                             ) : (
-                              <span className="text-ide-amber text-[10px]">Executing...</span>
+                              <span className="text-[#d29922] text-[10px]">Executing...</span>
                             )}
                           </div>
-                          <div className="font-mono text-[10px] text-ide-muted bg-ide-panel p-1.5 rounded">
+                          <div className="font-mono text-[10px] text-[#858585] bg-[#1a1a1a] p-1.5 rounded">
                             {JSON.stringify(tc.args, null, 2)}
                           </div>
                           {tc.result && (
-                            <details className="mt-1 text-[10px] text-ide-muted">
-                              <summary className="cursor-pointer hover:text-white">View Output</summary>
-                              <pre className="mt-1 p-1.5 bg-ide-panel rounded text-[10px] overflow-x-auto text-ide-text font-mono">
+                            <details className="mt-1 text-[10px] text-[#858585]">
+                              <summary className="cursor-pointer hover:text-white">Output</summary>
+                              <pre className="mt-1 p-1.5 bg-[#1a1a1a] rounded text-[10px] overflow-x-auto text-[#cccccc] font-mono">
                                 {JSON.stringify(tc.result, null, 2)}
                               </pre>
                             </details>
@@ -354,33 +325,33 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                     </div>
                   )}
 
-                  {/* Assistant response content */}
+                  {/* Assistant response text */}
                   {msg.content && (
-                    <div className="bg-ide-sidebar border border-ide-border/80 p-3 rounded-xl text-xs leading-relaxed whitespace-pre-wrap flex flex-col gap-2">
+                    <div className="bg-[#1a1a1a] border border-[#262626] p-3 rounded-lg text-xs leading-relaxed whitespace-pre-wrap flex flex-col gap-2">
                       <div>{msg.content}</div>
 
                       {/* Inter-Agent Context Sharing & Actions */}
-                      <div className="flex items-center justify-between border-t border-ide-border/50 pt-2 text-[10px] text-ide-muted">
+                      <div className="flex items-center justify-between border-t border-[#262626] pt-2 text-[10px] text-[#858585]">
                         <div className="flex items-center gap-1.5">
                           <button
                             title="Copy response text"
                             onClick={() => handleCopy(msg.id, msg.content)}
-                            className="p-1 rounded hover:bg-ide-card hover:text-white transition-colors flex items-center gap-1"
+                            className="p-1 rounded hover:bg-[#252525] hover:text-white transition-colors flex items-center gap-1"
                           >
-                            {copiedId === msg.id ? <Check className="w-3 h-3 text-ide-emerald" /> : <Copy className="w-3 h-3" />}
+                            {copiedId === msg.id ? <Check className="w-3 h-3 text-[#3fb950]" /> : <Copy className="w-3 h-3" />}
                             <span>Copy</span>
                           </button>
 
                           {onApplyCodeToEditor && msg.content.includes('```') && (
                             <button
-                              title="Apply code snippet to active editor tab"
+                              title="Apply code to editor"
                               onClick={() => {
                                 const codeMatch = msg.content.match(/```(?:[a-z]*\n)?([\s\S]*?)```/);
                                 if (codeMatch && codeMatch[1]) {
                                   onApplyCodeToEditor(codeMatch[1]);
                                 }
                               }}
-                              className="p-1 rounded hover:bg-ide-card hover:text-ide-cyan transition-colors flex items-center gap-1"
+                              className="p-1 rounded hover:bg-[#252525] hover:text-[#58a6ff] transition-colors flex items-center gap-1"
                             >
                               <FileCode className="w-3 h-3" />
                               <span>Apply to Editor</span>
@@ -390,19 +361,19 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
 
                         {onShareToContextBus && (
                           <button
-                            title="Publish to Multi-Agent Context Bus for other agents to see"
+                            title="Publish to context bus"
                             onClick={() => handleShareContext(msg.id, msg.content)}
-                            className="px-2 py-0.5 rounded bg-ide-accent/10 hover:bg-ide-accent/20 text-ide-accent border border-ide-accent/30 transition-colors flex items-center gap-1"
+                            className="px-2 py-0.5 rounded bg-[#252525] hover:bg-[#2e2e2e] text-[#cccccc] hover:text-white border border-[#333333] transition-colors flex items-center gap-1"
                           >
                             {sharedMsgId === msg.id ? (
                               <>
-                                <Check className="w-3 h-3 text-ide-emerald" />
-                                <span className="text-ide-emerald">Context Shared!</span>
+                                <Check className="w-3 h-3 text-[#3fb950]" />
+                                <span className="text-[#3fb950]">Context Shared!</span>
                               </>
                             ) : (
                               <>
                                 <Share2 className="w-3 h-3" />
-                                <span>Share to Context Bus</span>
+                                <span>Share Context</span>
                               </>
                             )}
                           </button>
@@ -416,43 +387,50 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
           ))
         )}
 
-        {/* Live streaming current thought */}
+        {/* Live streaming thought */}
         {agent.currentThought && (
-          <div className="bg-ide-sidebar/60 border border-ide-amber/40 rounded-lg p-2 text-[11px] text-ide-amber flex items-center gap-2 animate-pulse-subtle">
+          <div className="bg-[#1c1c1c] border border-[#d29922]/30 rounded-md p-2 text-[11px] text-[#d29922] flex items-center gap-2">
             <BrainCircuit className="w-3.5 h-3.5 shrink-0 animate-spin" />
             <span className="truncate">{agent.currentThought}</span>
           </div>
         )}
       </div>
 
-      {/* Input Prompt Box */}
-      <div className="p-2.5 bg-ide-sidebar border-t border-ide-border select-none shrink-0">
-        {activeFilePath && (
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <span className="px-1.5 py-0.5 rounded bg-ide-card border border-ide-border text-[10px] text-ide-muted flex items-center gap-1">
-              <FileCode className="w-3 h-3 text-ide-cyan" />
-              <span className="text-white font-mono">{activeFilePath}</span>
-            </span>
-          </div>
-        )}
+      {/* Cursor-style Composer Input */}
+      <div className="p-2.5 bg-[#181818] border-t border-[#2b2b2b] select-none shrink-0">
+        <div className="bg-[#222222] border border-[#333333] focus-within:border-[#0078d4] rounded-lg p-2 transition-all">
+          {/* Active File Context Pill */}
+          {activeFilePath && (
+            <div className="mb-1.5 flex items-center gap-1">
+              <span className="px-1.5 py-0.5 rounded bg-[#181818] border border-[#2e2e2e] text-[10px] text-[#858585] flex items-center gap-1">
+                <FileCode className="w-3 h-3 text-[#58a6ff]" />
+                <span className="text-[#cccccc] font-mono">{activeFilePath.split('/').pop()}</span>
+              </span>
+            </div>
+          )}
 
-        <div className="flex items-center gap-2 bg-ide-darkest border border-ide-border rounded-lg p-1.5 focus-within:border-ide-accent">
           <textarea
             rows={2}
-            placeholder={`Ask ${agent.name} (${agent.role})... (Enter to run, Shift+Enter for newline)`}
+            placeholder={`Ask ${agent.name}...`}
             value={agent.input}
             disabled={agent.status !== 'idle'}
             onChange={(e) => onUpdateInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-xs text-white placeholder-ide-muted/50 focus:outline-none resize-none leading-relaxed"
+            className="w-full bg-transparent text-xs text-white placeholder-[#858585] focus:outline-none resize-none leading-relaxed"
           />
-          <button
-            onClick={() => onSendMessage()}
-            disabled={!agent.input.trim() || agent.status !== 'idle'}
-            className="p-2 rounded-md bg-ide-accent hover:bg-ide-accentHover disabled:opacity-40 text-white transition-colors shrink-0"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
+
+          <div className="flex items-center justify-between pt-1 border-t border-[#2a2a2a] mt-1 text-[11px]">
+            <span className="text-[10px] text-[#858585]">
+              Enter to send, Shift+Enter for newline
+            </span>
+            <button
+              onClick={() => onSendMessage()}
+              disabled={!agent.input.trim() || agent.status !== 'idle'}
+              className="w-6 h-6 rounded flex items-center justify-center bg-[#0078d4] hover:bg-[#026ec1] disabled:opacity-30 text-white transition-colors"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

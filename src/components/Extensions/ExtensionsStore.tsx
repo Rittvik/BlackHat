@@ -3,16 +3,13 @@ import {
   Search, 
   Download, 
   Star, 
-  Check, 
   Sparkles, 
   Cpu, 
   Code2, 
   Palette, 
   Wrench, 
   ShieldCheck, 
-  ExternalLink,
-  Layers,
-  Filter
+  Layers
 } from 'lucide-react';
 import { ExtensionItem } from '../../types';
 
@@ -21,7 +18,7 @@ export const INITIAL_EXTENSIONS: ExtensionItem[] = [
     id: 'google.gemini-code-assist',
     name: 'gemini-code-assist',
     displayName: 'Google Gemini Code Assist',
-    description: 'Autonomous AI code completions, whole-file generation, and Gemini 2.5 Pro architecture reasoning.',
+    description: 'Autonomous AI completions, whole-file generation, and Gemini 2.5 Pro architecture reasoning.',
     version: '2.5.0',
     publisher: 'Google Cloud',
     iconName: 'Sparkles',
@@ -121,21 +118,6 @@ export const INITIAL_EXTENSIONS: ExtensionItem[] = [
     installed: false,
     enabled: true,
     tags: ['formatter', 'prettier', 'code-style']
-  },
-  {
-    id: 'blackhat.theme-obsidian-pro',
-    name: 'theme-obsidian-pro',
-    displayName: 'Antigravity Obsidian Cyberpunk Theme',
-    description: 'Deep space dark theme with emerald & indigo neon highlights tailored for multi-agent workflows.',
-    version: '1.4.0',
-    publisher: 'BlackHat Design',
-    iconName: 'Palette',
-    downloads: '150k',
-    rating: 4.9,
-    category: 'Themes',
-    installed: true,
-    enabled: true,
-    tags: ['theme', 'dark', 'cyberpunk', 'antigravity']
   }
 ];
 
@@ -154,7 +136,7 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [tab, setTab] = useState<'marketplace' | 'installed'>('marketplace');
 
-  const categories = ['All', 'AI & Agents', 'Languages', 'Themes', 'Formatters', 'Tools'];
+  const categories = ['All', 'AI & Agents', 'Languages', 'Formatters', 'Tools'];
 
   const filteredExtensions = extensions.filter(ext => {
     const matchesSearch = 
@@ -172,34 +154,34 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'AI & Agents':
-        return <Sparkles className="w-3.5 h-3.5 text-ide-accent" />;
+        return <Sparkles className="w-4 h-4 text-[#58a6ff]" />;
       case 'Languages':
-        return <Code2 className="w-3.5 h-3.5 text-ide-cyan" />;
+        return <Code2 className="w-4 h-4 text-[#388bfd]" />;
       case 'Themes':
-        return <Palette className="w-3.5 h-3.5 text-ide-purple" />;
+        return <Palette className="w-4 h-4 text-[#bc8cff]" />;
       case 'Formatters':
-        return <Wrench className="w-3.5 h-3.5 text-ide-amber" />;
+        return <Wrench className="w-4 h-4 text-[#d29922]" />;
       case 'Tools':
-        return <ShieldCheck className="w-3.5 h-3.5 text-ide-emerald" />;
+        return <ShieldCheck className="w-4 h-4 text-[#3fb950]" />;
       default:
-        return <Layers className="w-3.5 h-3.5 text-ide-muted" />;
+        return <Layers className="w-4 h-4 text-[#858585]" />;
     }
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-ide-sidebar border-r border-ide-border select-none overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[#181818] border-r border-[#2b2b2b] select-none overflow-hidden">
       {/* Header */}
-      <div className="h-9 px-3 flex items-center justify-between border-b border-ide-border bg-ide-sidebar shrink-0">
-        <span className="text-xs font-semibold tracking-wider text-ide-text uppercase">
-          Extensions Store
+      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0">
+        <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase">
+          Extensions
         </span>
         <div className="flex items-center gap-1 text-[11px]">
           <button
             onClick={() => setTab('marketplace')}
             className={`px-2 py-0.5 rounded transition-colors ${
               tab === 'marketplace'
-                ? 'bg-ide-accent/20 text-ide-accent font-medium'
-                : 'text-ide-muted hover:text-white'
+                ? 'bg-[#252525] text-white font-medium'
+                : 'text-[#858585] hover:text-[#cccccc]'
             }`}
           >
             Marketplace
@@ -208,8 +190,8 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
             onClick={() => setTab('installed')}
             className={`px-2 py-0.5 rounded transition-colors ${
               tab === 'installed'
-                ? 'bg-ide-accent/20 text-ide-accent font-medium'
-                : 'text-ide-muted hover:text-white'
+                ? 'bg-[#252525] text-white font-medium'
+                : 'text-[#858585] hover:text-[#cccccc]'
             }`}
           >
             Installed ({extensions.filter(e => e.installed).length})
@@ -218,28 +200,28 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
       </div>
 
       {/* Search Bar */}
-      <div className="p-2 border-b border-ide-border shrink-0">
+      <div className="p-2 border-b border-[#2b2b2b] shrink-0">
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-ide-muted absolute left-2.5 top-2" />
+          <Search className="w-3.5 h-3.5 text-[#858585] absolute left-2.5 top-2" />
           <input
             type="text"
-            placeholder="Search extensions in Marketplace..."
+            placeholder="Search Extensions in Marketplace..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1 bg-ide-darkest border border-ide-border rounded text-xs text-white placeholder-ide-muted/60 focus:outline-none focus:border-ide-accent"
+            className="w-full pl-8 pr-3 py-1 bg-[#141414] border border-[#2b2b2b] rounded text-xs text-white placeholder-[#666666] focus:outline-none focus:border-[#0078d4]"
           />
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-1 mt-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex items-center gap-1 mt-1.5 overflow-x-auto no-scrollbar pb-0.5">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap transition-colors ${
+              className={`px-2 py-0.5 rounded text-[10px] whitespace-nowrap transition-colors ${
                 selectedCategory === cat
-                  ? 'bg-ide-accent text-white font-medium'
-                  : 'bg-ide-card text-ide-muted hover:text-white hover:bg-ide-hover'
+                  ? 'bg-[#252525] text-white font-medium border border-[#333333]'
+                  : 'text-[#858585] hover:text-[#cccccc]'
               }`}
             >
               {cat}
@@ -249,31 +231,31 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
       </div>
 
       {/* Extension List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-ide-border/40 p-1">
+      <div className="flex-1 overflow-y-auto divide-y divide-[#222222] p-1">
         {filteredExtensions.length === 0 ? (
-          <div className="p-6 text-center text-xs text-ide-muted">
-            No extensions found matching your filter.
+          <div className="p-6 text-center text-xs text-[#858585]">
+            No extensions found
           </div>
         ) : (
           filteredExtensions.map((ext) => (
             <div
               key={ext.id}
-              className="p-3 hover:bg-ide-panel/60 transition-colors rounded-lg flex flex-col gap-2 group"
+              className="p-2.5 hover:bg-[rgba(255,255,255,0.03)] transition-colors rounded flex flex-col gap-1.5 group"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-ide-card border border-ide-border flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded bg-[#202020] border border-[#2e2e2e] flex items-center justify-center shrink-0">
                     {getCategoryIcon(ext.category)}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-white truncate">
+                      <span className="text-xs font-normal text-white truncate">
                         {ext.displayName}
                       </span>
-                      <span className="text-[10px] text-ide-muted">v{ext.version}</span>
+                      <span className="text-[10px] text-[#858585]">v{ext.version}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-ide-muted mt-0.5">
-                      <span className="text-ide-accent hover:underline cursor-pointer">
+                    <div className="flex items-center gap-2 text-[10px] text-[#858585] mt-0.5">
+                      <span className="text-[#cccccc]">
                         {ext.publisher}
                       </span>
                       <span>•</span>
@@ -282,7 +264,7 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
                         {ext.downloads}
                       </span>
                       <span>•</span>
-                      <span className="flex items-center gap-0.5 text-ide-amber">
+                      <span className="flex items-center gap-0.5 text-[#d29922]">
                         <Star className="w-2.5 h-2.5 fill-current" />
                         {ext.rating}
                       </span>
@@ -296,17 +278,17 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onToggleEnable(ext.id)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        className={`px-2 py-0.5 rounded text-[10px] font-normal transition-colors border ${
                           ext.enabled
-                            ? 'bg-ide-emerald/20 text-ide-emerald border border-ide-emerald/30 hover:bg-ide-emerald/30'
-                            : 'bg-ide-card text-ide-muted border border-ide-border hover:text-white'
+                            ? 'bg-[#2ea043]/15 text-[#3fb950] border-[#2ea043]/30'
+                            : 'bg-[#222222] text-[#858585] border-[#2e2e2e]'
                         }`}
                       >
                         {ext.enabled ? 'Enabled' : 'Disabled'}
                       </button>
                       <button
                         onClick={() => onToggleInstall(ext.id)}
-                        className="px-2 py-0.5 rounded text-[10px] text-ide-muted hover:text-ide-rose hover:bg-ide-rose/10 transition-colors"
+                        className="px-1.5 py-0.5 rounded text-[10px] text-[#858585] hover:text-[#f85149] transition-colors"
                       >
                         Uninstall
                       </button>
@@ -314,7 +296,7 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
                   ) : (
                     <button
                       onClick={() => onToggleInstall(ext.id)}
-                      className="px-2.5 py-1 rounded bg-ide-accent hover:bg-ide-accentHover text-white text-[10px] font-medium transition-colors shadow-sm"
+                      className="px-2.5 py-0.5 rounded bg-[#0078d4] hover:bg-[#026ec1] text-white text-[10px] font-normal transition-colors"
                     >
                       Install
                     </button>
@@ -322,21 +304,9 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
                 </div>
               </div>
 
-              <p className="text-[11px] text-ide-muted line-clamp-2 leading-relaxed">
+              <p className="text-[11px] text-[#858585] line-clamp-2 leading-relaxed">
                 {ext.description}
               </p>
-
-              {/* Tags */}
-              <div className="flex items-center gap-1 flex-wrap">
-                {ext.tags.map(t => (
-                  <span
-                    key={t}
-                    className="px-1.5 py-0.2 rounded text-[9px] bg-ide-darkest text-ide-muted border border-ide-border/60"
-                  >
-                    #{t}
-                  </span>
-                ))}
-              </div>
             </div>
           ))
         )}

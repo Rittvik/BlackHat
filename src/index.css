@@ -4,22 +4,33 @@
 
 :root {
   color-scheme: dark;
+  --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --vscode-editor-font: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, 'Courier New', monospace;
+  --vscode-editor-bg: #1e1e1e;
+  --vscode-workbench-bg: #181818;
+  --vscode-border: #2b2b2b;
+  --vscode-accent: #0078d4;
+  --vscode-accent-hover: #026ec1;
+  --vscode-text: #cccccc;
+  --vscode-text-muted: #858585;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #090b0e;
-  color: #e2e8f0;
+  font-family: var(--vscode-font-family);
+  background-color: #181818;
+  color: #cccccc;
   overflow: hidden;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbars matching Antigravity IDE */
+/* VS Code / Antigravity IDE exact scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -27,33 +38,45 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #242c3d;
-  border-radius: 3px;
+  background: rgba(121, 121, 121, 0.35);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b465c;
+  background: rgba(100, 100, 100, 0.65);
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
-/* Subtle glow animations */
-@keyframes pulse-subtle {
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Text Selection */
+::selection {
+  background-color: #264f78;
+  color: #ffffff;
+}
+
+/* Monospace font standard */
+pre, code, kbd, samp {
+  font-family: var(--vscode-editor-font);
+}
+
+/* Focus outline matching VSCode */
+:focus-visible {
+  outline: 1px solid #0078d4;
+  outline-offset: -1px;
+}
+
+/* Clean minimal pulse */
+@keyframes subtle-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.6; }
 }
 
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Glassmorphism panel backdrop */
-.glass-panel {
-  background: rgba(18, 22, 31, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(42, 53, 74, 0.6);
-}
-
-/* Code block styles */
-pre code {
-  font-family: 'JetBrains Mono', monospace;
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

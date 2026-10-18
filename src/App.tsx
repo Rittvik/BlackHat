@@ -22,6 +22,7 @@ import {
   SharedContextItem 
 } from './types';
 import { getLanguageFromPath } from './utils/language';
+import { PanelLeft, PanelRight, Terminal as TerminalIcon, Search } from 'lucide-react';
 
 const DEFAULT_SETTINGS: AISettings = {
   geminiApiKey: '',
@@ -134,9 +135,11 @@ export const App: React.FC = () => {
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
 
-  // Layout widths
-  const [sidebarWidth, setSidebarWidth] = useState<number>(270);
-  const [agentWindowWidth, setAgentWindowWidth] = useState<number>(490);
+  // Layout widths & visibility
+  const [sidebarWidth, setSidebarWidth] = useState<number>(260);
+  const [agentWindowWidth, setAgentWindowWidth] = useState<number>(440);
+  const [isSidebarVisible, setIsSidebarVisible] = useState<boolean>(true);
+  const [isAgentWindowVisible, setIsAgentWindowVisible] = useState<boolean>(true);
 
   // Files & Tabs
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
@@ -237,7 +240,7 @@ export const App: React.FC = () => {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'k' || e.key.toLowerCase() === 'p')) {
         e.preventDefault();
         setIsCommandPaletteOpen(prev => !prev);
       }
@@ -687,85 +690,116 @@ export const App: React.FC = () => {
   const platform = (window as any).electronAPI?.platform || (navigator.userAgent.includes('Mac') ? 'darwin' : 'win32');
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-ide-darkest text-ide-text overflow-hidden select-none font-sans">
+    <div className="w-screen h-screen flex flex-col bg-[#181818] text-[#cccccc] overflow-hidden select-none font-sans">
       {/* Top Application Window Bar with Cross-Platform Support */}
       <div 
         style={{ WebkitAppRegion: 'drag' } as any}
-        className={`h-9 px-3 flex items-center justify-between bg-ide-darkest border-b border-ide-border shrink-0 ${
-          isElectron && platform === 'darwin' ? 'pl-20' : ''
+        className={`h-[36px] px-3 flex items-center justify-between bg-[#181818] border-b border-[#2b2b2b] shrink-0 ${
+          isElectron && platform === 'darwin' ? 'pl-[78px]' : ''
         }`}
       >
-        <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          {(!isElectron && platform === 'darwin') && (
-            <div className="flex items-center gap-1.5 mr-1">
-              <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 cursor-pointer" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 cursor-pointer" />
-              <div className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500 cursor-pointer" />
-            </div>
-          )}
-          <span className="text-xs font-bold tracking-wider text-white flex items-center gap-2">
-            <span className="px-1.5 py-0.5 rounded bg-ide-accent/20 border border-ide-accent/40 text-ide-accent text-[10px] font-mono font-semibold">
+        {/* Left Section: Branding & Workspace Path */}
+        <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <span className="text-[12px] font-medium text-white flex items-center gap-1.5">
+            <span className="w-4 h-4 rounded bg-[#0078d4] text-white text-[9px] font-bold flex items-center justify-center font-mono">
               BH
             </span>
             <span>BlackHat</span>
-            <span className="text-[10px] font-normal text-ide-muted font-sans border-l border-ide-border pl-2">
-              Autonomous Multi-Agent IDE
-            </span>
           </span>
+          <span className="text-[11px] text-[#555555]">/</span>
+          <span className="text-[11px] text-[#858585]">workspace</span>
         </div>
 
         {/* Center Search / Command Trigger */}
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
           style={{ WebkitAppRegion: 'no-drag' } as any}
-          className="px-4 py-1 rounded-md bg-ide-sidebar hover:bg-ide-card border border-ide-border text-xs text-ide-muted flex items-center gap-2 transition-colors cursor-pointer"
+          className="w-[380px] max-w-[40vw] h-[26px] rounded bg-[#222222] hover:bg-[#282828] border border-[#2e2e2e] text-[12px] text-[#858585] flex items-center justify-between px-3 transition-colors cursor-pointer"
         >
-          <span>Quick Open & Commands</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-ide-panel border border-ide-border text-[10px] font-mono">
-            Cmd + K
+          <div className="flex items-center gap-2 truncate">
+            <Search className="w-3.5 h-3.5 text-[#858585]" />
+            <span className="truncate">BlackHat - Search files, symbols & commands...</span>
+          </div>
+          <kbd className="px-1.5 py-0.2 rounded bg-[#181818] border border-[#333333] text-[10px] font-mono text-[#858585]">
+            ⌘P
           </kbd>
         </button>
 
-        {/* Right Section: Multi-Agent Launcher & User Profile Button */}
+        {/* Right Section: Multi-Agent Launcher, Layout Toggles & Account */}
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {/* Run All Agents */}
           <button
             onClick={handleRunAllThreeAgentsConcurrently}
-            className="px-2.5 py-1 rounded-md bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 hover:opacity-95 text-white text-[11px] font-medium flex items-center gap-1.5 shadow-sm transition-all"
+            className="px-2.5 py-1 rounded bg-[#0078d4] hover:bg-[#026ec1] text-white text-[11px] font-normal flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Dispatch Architect, Developer, and Tester simultaneously"
           >
-            <span>⚡ Run Architect, Developer & Tester Concurrently</span>
+            <span>⚡ Run All Agents</span>
           </button>
+
+          {/* Layout Toggles */}
+          <div className="flex items-center border-l border-[#2e2e2e] pl-1.5 ml-0.5 gap-0.5">
+            <button
+              onClick={() => setIsSidebarVisible(prev => !prev)}
+              title={isSidebarVisible ? "Hide Primary SideBar" : "Show Primary SideBar"}
+              className={`p-1.5 rounded hover:bg-[#252525] transition-colors ${
+                isSidebarVisible ? 'text-white' : 'text-[#666666]'
+              }`}
+            >
+              <PanelLeft className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setIsTerminalOpen(prev => !prev)}
+              title={isTerminalOpen ? "Hide Terminal Panel" : "Show Terminal Panel"}
+              className={`p-1.5 rounded hover:bg-[#252525] transition-colors ${
+                isTerminalOpen ? 'text-white' : 'text-[#666666]'
+              }`}
+            >
+              <TerminalIcon className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setIsAgentWindowVisible(prev => !prev)}
+              title={isAgentWindowVisible ? "Hide Agent Studio" : "Show Agent Studio"}
+              className={`p-1.5 rounded hover:bg-[#252525] transition-colors ${
+                isAgentWindowVisible ? 'text-white' : 'text-[#666666]'
+              }`}
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {/* User Account Button */}
           <button
             onClick={() => setIsAccountModalOpen(true)}
-            className="px-2 py-1 rounded-md bg-ide-card hover:bg-ide-hover border border-ide-border text-xs flex items-center gap-1.5 text-ide-text transition-colors"
+            className="px-2 py-1 rounded hover:bg-[#252525] border border-[#2e2e2e] text-xs flex items-center gap-1.5 text-[#cccccc] transition-colors"
           >
             {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-4 h-4 rounded-full" />
+              <img src={user.avatar} alt={user.name} className="w-4 h-4 rounded-full object-cover" />
             ) : null}
-            <span className="text-[11px] font-medium">{user.isLoggedIn ? user.name : 'Sign In'}</span>
+            <span className="text-[11px] font-normal">{user.isLoggedIn ? user.name : 'Sign In'}</span>
           </button>
 
           {/* Windows native window controls in Electron */}
           {isElectron && platform === 'win32' && (
-            <div className="flex items-center ml-2 border-l border-ide-border pl-2">
+            <div className="flex items-center ml-2 border-l border-[#2b2b2b] pl-2">
               <button 
                 onClick={() => (window as any).electronAPI.minimize()}
-                className="w-8 h-7 flex items-center justify-center hover:bg-ide-hover text-ide-muted hover:text-white text-xs"
+                className="w-8 h-7 flex items-center justify-center hover:bg-[#252525] text-[#858585] hover:text-white text-xs"
                 title="Minimize"
               >
                 &#8212;
               </button>
               <button 
                 onClick={() => (window as any).electronAPI.maximize()}
-                className="w-8 h-7 flex items-center justify-center hover:bg-ide-hover text-ide-muted hover:text-white text-xs"
+                className="w-8 h-7 flex items-center justify-center hover:bg-[#252525] text-[#858585] hover:text-white text-xs"
                 title="Maximize"
               >
                 &#9633;
               </button>
               <button 
                 onClick={() => (window as any).electronAPI.close()}
-                className="w-8 h-7 flex items-center justify-center hover:bg-red-600 text-ide-muted hover:text-white text-xs"
+                className="w-8 h-7 flex items-center justify-center hover:bg-[#f85149] text-[#858585] hover:text-white text-xs"
                 title="Close"
               >
                 &#10005;
@@ -791,27 +825,29 @@ export const App: React.FC = () => {
         />
 
         {/* Left Sidebar (Explorer OR Extensions Store) */}
-        <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0">
-          {activeView === 'extensions' ? (
-            <ExtensionsStore
-              extensions={extensions}
-              onToggleInstall={handleToggleInstallExtension}
-              onToggleEnable={handleToggleEnableExtension}
-            />
-          ) : (
-            <FileTree
-              files={fileTree}
-              activeFilePath={activeTab?.path}
-              onFileSelect={handleSelectFile}
-              onRefresh={loadFiles}
-              onCreateFile={handleCreateFile}
-              onDeleteFile={handleDeleteFile}
-            />
-          )}
-        </div>
+        {isSidebarVisible && (
+          <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0">
+            {activeView === 'extensions' ? (
+              <ExtensionsStore
+                extensions={extensions}
+                onToggleInstall={handleToggleInstallExtension}
+                onToggleEnable={handleToggleEnableExtension}
+              />
+            ) : (
+              <FileTree
+                files={fileTree}
+                activeFilePath={activeTab?.path}
+                onFileSelect={handleSelectFile}
+                onRefresh={loadFiles}
+                onCreateFile={handleCreateFile}
+                onDeleteFile={handleDeleteFile}
+              />
+            )}
+          </div>
+        )}
 
         {/* Center Editor Area + Terminal */}
-        <div className="flex-1 flex flex-col min-w-0 bg-ide-bg overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] overflow-hidden">
           {/* Tab Bar */}
           <EditorTabs
             tabs={tabs}
@@ -821,7 +857,7 @@ export const App: React.FC = () => {
           />
 
           {/* Monaco Editor */}
-          <div className="flex-1 relative overflow-hidden">
+          <div className="flex-1 relative overflow-hidden bg-[#1e1e1e]">
             <MonacoCodeEditor
               activeTab={activeTab}
               onChangeContent={handleChangeEditorContent}
@@ -840,31 +876,34 @@ export const App: React.FC = () => {
         </div>
 
         {/* Right Multi-Agent Window (Architect, Developer, Tester, etc.) */}
-        <div style={{ width: `${agentWindowWidth}px` }} className="h-full shrink-0">
-          <AgentWindowContainer
-            agents={agents}
-            settings={settings}
-            sharedContextItems={sharedContextItems}
-            activeFilePath={activeTab?.path}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenAddAgentModal={() => setIsAddAgentModalOpen(true)}
-            onRemoveCustomAgent={handleRemoveCustomAgent}
-            onUpdateAgentInput={(id, val) => {
-              setAgents(prev => prev.map(a => a.id === id ? { ...a, input: val } : a));
-            }}
-            onSendMessage={handleSendMessage}
-            onStopAgent={handleStopAgent}
-            onClearAgent={handleClearAgent}
-            onSelectAgentModel={handleSelectAgentModel}
-            onApplyCodeToEditor={(code) => {
-              if (activeTab) handleChangeEditorContent(code);
-            }}
-            onShareToContextBus={handleShareToContextBus}
-            onClearContextBus={() => setSharedContextItems([])}
-            onRemoveContextItem={(id) => setSharedContextItems(prev => prev.filter(i => i.id !== id))}
-          />
-        </div>
+        {isAgentWindowVisible && (
+          <div style={{ width: `${agentWindowWidth}px` }} className="h-full shrink-0">
+            <AgentWindowContainer
+              agents={agents}
+              settings={settings}
+              sharedContextItems={sharedContextItems}
+              activeFilePath={activeTab?.path}
+              onOpenSettings={() => setIsSettingsOpen(true)}
+              onOpenAddAgentModal={() => setIsAddAgentModalOpen(true)}
+              onRemoveCustomAgent={handleRemoveCustomAgent}
+              onUpdateAgentInput={(id, val) => {
+                setAgents(prev => prev.map(a => a.id === id ? { ...a, input: val } : a));
+              }}
+              onSendMessage={handleSendMessage}
+              onStopAgent={handleStopAgent}
+              onClearAgent={handleClearAgent}
+              onSelectAgentModel={handleSelectAgentModel}
+              onApplyCodeToEditor={(code) => {
+                if (activeTab) handleChangeEditorContent(code);
+              }}
+              onShareToContextBus={handleShareToContextBus}
+              onClearContextBus={() => setSharedContextItems([])}
+              onRemoveContextItem={(id) => setSharedContextItems(prev => prev.filter(i => i.id !== id))}
+            />
+          </div>
+        )}
       </div>
+
 
       {/* Bottom Status Bar */}
       <StatusBar

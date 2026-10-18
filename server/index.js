@@ -14,24 +14,32 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 app.use(cors());
 app.use(express.json());
 
-const WORKSPACE_ROOT = process.cwd();
+import os from 'os';
+
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || (process.cwd() === '/' ? path.join(os.homedir(), 'BlackHat') : process.cwd());
 
 // Active agent runners map: agentId -> runner
 const activeRunners = new Map();
 
 // Helper to recursively list files
-async function getFileTree(dir, relativePath = '') {
+async function getFileTree(dir, relativePath = '', depth = 0) {
+  if (depth > 5) return [];
   const fullPath = path.join(dir, relativePath);
-  const entries = await fs.readdir(fullPath, { withFileTypes: true });
+  let entries = [];
+  try {
+    entries = await fs.readdir(fullPath, { withFileTypes: true });
+  } catch (err) {
+    return [];
+  }
   const items = [];
 
   for (const entry of entries) {
-    if (['node_modules', '.git', 'dist', '.DS_Store'].includes(entry.name)) {
+    if (['node_modules', '.git', 'dist', 'release', '.DS_Store', 'Library'].includes(entry.name) || (entry.name.startsWith('.') && entry.name !== '.gitignore' && entry.name !== '.env.example')) {
       continue;
     }
     const itemRelPath = path.join(relativePath, entry.name);
     if (entry.isDirectory()) {
-      const children = await getFileTree(dir, itemRelPath);
+      const children = await getFileTree(dir, itemRelPath, depth + 1);
       items.push({
         name: entry.name,
         path: itemRelPath,

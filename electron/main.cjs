@@ -38,12 +38,15 @@ if (!gotTheLock) {
       return;
     }
 
+    const defaultWorkspace = process.env.WORKSPACE_ROOT || path.join(__dirname, '..');
     const serverPath = path.join(__dirname, '..', 'server', 'index.js');
     serverProcess = spawn(process.execPath, [serverPath], {
+      cwd: defaultWorkspace,
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
-        PORT: PORT.toString()
+        PORT: PORT.toString(),
+        WORKSPACE_ROOT: defaultWorkspace
       },
       stdio: 'inherit'
     });

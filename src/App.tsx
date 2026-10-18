@@ -16,6 +16,7 @@ import { AddAgentModal } from './components/Modals/AddAgentModal';
 import { CommandPalette } from './components/Modals/CommandPalette';
 import { LoginScreen } from './components/Auth/LoginScreen';
 import { TopMenuBar } from './components/Header/TopMenuBar';
+import { AppLogo } from './components/Common/AppLogo';
 import { 
   FileNode, 
   EditorTab, 
@@ -989,9 +990,7 @@ export const App: React.FC = () => {
         {/* Left Section: Branding & Menu Bar */}
         <div className="flex items-center gap-2.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <span className="text-[12px] font-medium text-white flex items-center gap-1.5">
-            <span className="w-4 h-4 rounded bg-[#0078d4] text-white text-[9px] font-bold flex items-center justify-center font-mono">
-              BH
-            </span>
+            <AppLogo size={18} className="w-[18px] h-[18px] shrink-0 rounded" />
             <span>BlackHat</span>
           </span>
 

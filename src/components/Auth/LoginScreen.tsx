@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Sparkles, Layers, ShieldCheck, ArrowRight, Code2 } from 'lucide-react';
 import { UserProfile } from '../../types';
+import { AppLogo } from '../Common/AppLogo';
 
 interface LoginScreenProps {
   onLogin: (provider: 'google' | 'github') => void;
@@ -36,9 +37,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       >
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <span className="text-[12px] font-medium text-white flex items-center gap-1.5">
-            <span className="w-4 h-4 rounded bg-[#0078d4] text-white text-[9px] font-bold flex items-center justify-center font-mono">
-              BH
-            </span>
+            <AppLogo size={18} className="w-[18px] h-[18px] shrink-0 rounded" />
             <span>BlackHat</span>
           </span>
           <span className="text-[11px] text-[#555555]">/</span>
@@ -71,12 +70,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
         <div className="w-full max-w-md bg-[#181818] border border-[#2b2b2b] rounded-xl shadow-2xl p-7 flex flex-col items-center text-center relative z-10 font-sans">
           {/* Logo Badge */}
-          <div className="w-12 h-12 rounded-xl bg-[#222222] border border-[#333333] flex items-center justify-center text-[#0078d4] mb-3 shadow-md">
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
+          <div className="w-14 h-14 rounded-2xl bg-[#090d14] border border-[#223247] flex items-center justify-center p-2 mb-4 shadow-xl shadow-cyan-950/20">
+            <AppLogo size={48} className="w-12 h-12" />
           </div>
 
           <h1 className="text-lg font-semibold text-white tracking-wide mb-1">

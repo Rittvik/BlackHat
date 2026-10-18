@@ -321,12 +321,14 @@ if (!gotTheLock) {
   }
 
   function createWindow() {
+    const iconPath = path.join(__dirname, '..', 'build', isMac ? 'icon.icns' : 'icon.png');
     mainWindow = new BrowserWindow({
       width: 1440,
       height: 920,
       minWidth: 1080,
       minHeight: 680,
       title: 'BlackHat',
+      icon: iconPath,
       backgroundColor: '#090b0e',
       titleBarStyle: isMac ? 'hiddenInset' : (isWindows ? 'hidden' : 'default'),
       ...(isMac && { trafficLightPosition: { x: 14, y: 11 } }),
@@ -345,6 +347,15 @@ if (!gotTheLock) {
         spellcheck: false
       }
     });
+
+    if (isMac && app.dock) {
+      const dockPng = path.join(__dirname, '..', 'build', 'icon.png');
+      try {
+        app.dock.setIcon(dockPng);
+      } catch (err) {
+        console.error('Failed to set dock icon:', err);
+      }
+    }
 
     if (isDev) {
       mainWindow.loadURL('http://localhost:5173');

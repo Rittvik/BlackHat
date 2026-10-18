@@ -275,7 +275,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     type="email"
                     required
                     autoFocus
-                    placeholder="e.g. rittvik@gmail.com or rittvik@rptu.de"
+                    placeholder="e.g. developer@gmail.com or alex@company.com"
                     value={googleEmail}
                     onChange={(e) => setGoogleEmail(e.target.value)}
                     className="w-full h-10 px-3 bg-[#111111] border border-[#333333] focus:border-[#4285F4] rounded-lg text-white text-xs outline-none transition-colors"
@@ -289,7 +289,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Rittvik Vashishtha"
+                    placeholder="e.g. Alex Chen"
                     value={googleName}
                     onChange={(e) => setGoogleName(e.target.value)}
                     className="w-full h-10 px-3 bg-[#111111] border border-[#333333] focus:border-[#4285F4] rounded-lg text-white text-xs outline-none transition-colors"
@@ -344,7 +344,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     type="text"
                     required
                     autoFocus
-                    placeholder="e.g. Rittvik or user@github.com"
+                    placeholder="e.g. octocat or developer@github.com"
                     value={githubEmail}
                     onChange={(e) => setGithubEmail(e.target.value)}
                     className="w-full h-10 px-3 bg-[#111111] border border-[#333333] focus:border-white rounded-lg text-white text-xs outline-none transition-colors"
@@ -358,7 +358,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Rittvik Vashishtha"
+                    placeholder="e.g. Alex Chen"
                     value={githubName}
                     onChange={(e) => setGithubName(e.target.value)}
                     className="w-full h-10 px-3 bg-[#111111] border border-[#333333] focus:border-white rounded-lg text-white text-xs outline-none transition-colors"

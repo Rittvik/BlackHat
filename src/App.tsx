@@ -41,41 +41,23 @@ const DEFAULT_SETTINGS: AISettings = {
     gemini: {
       provider: 'gemini',
       planName: 'Google Gemini Advanced (Google One)',
-      isActive: true,
-      accountEmail: 'rittvik@rptu.de',
+      isActive: false,
+      accountEmail: '',
       tier: 'Pro'
     },
     claude: {
       provider: 'claude',
       planName: 'Anthropic Claude Code & Pro',
-      isActive: true,
-      accountEmail: 'rittvik@rptu.de',
+      isActive: false,
+      accountEmail: '',
       tier: 'Pro'
     },
     codex: {
       provider: 'codex',
       planName: 'OpenAI ChatGPT Plus / Codex',
-      isActive: true,
-      accountEmail: 'rittvik@rptu.de',
+      isActive: false,
+      accountEmail: '',
       tier: 'Pro'
-    }
-  }
-};
-
-export const GOOGLE_USER_RITTVIK: UserProfile = {
-  id: 'usr_google_rittvik',
-  name: 'Rittvik Vashishtha',
-  email: 'rittvik@rptu.de',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-  provider: 'google',
-  isLoggedIn: true,
-  subscriptionTier: 'Pro',
-  linkedAccounts: {
-    google: {
-      email: 'rittvik@rptu.de',
-      name: 'Rittvik Vashishtha',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      linkedAt: new Date().toISOString()
     }
   }
 };
@@ -281,10 +263,12 @@ export const App: React.FC = () => {
     }
   });
 
-  // User Profile Auth State - Fresh login screen by default
+  // User Profile Auth State - Clean slate by default, requiring login
   const [user, setUser] = useState<UserProfile>(() => {
     try {
-      const saved = localStorage.getItem('blackhat_user_profile');
+      // Purge legacy storage key
+      localStorage.removeItem('blackhat_user_profile');
+      const saved = localStorage.getItem('blackhat_user_profile_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.isLoggedIn && parsed.email) {
@@ -315,7 +299,12 @@ export const App: React.FC = () => {
   }, [extensions]);
 
   useEffect(() => {
-    localStorage.setItem('blackhat_user_profile', JSON.stringify(user));
+    if (user.isLoggedIn) {
+      localStorage.setItem('blackhat_user_profile_v2', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('blackhat_user_profile_v2');
+      localStorage.removeItem('blackhat_user_profile');
+    }
   }, [user]);
 
   const API_BASE = typeof window !== 'undefined' && window.location.protocol === 'file:' 
@@ -913,8 +902,11 @@ export const App: React.FC = () => {
 
   // User Auth operations
   const handleLogin = (provider: 'google' | 'github', manualData?: { email?: string; name?: string }) => {
+    const rawEmail = manualData?.email?.trim();
+    if (!rawEmail) return;
+
     if (provider === 'google') {
-      const email = manualData?.email?.trim() || 'rittvik@rptu.de';
+      const email = rawEmail;
       const name = manualData?.name?.trim() || email.split('@')[0];
       const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0284c7&color=fff&bold=true`;
       const sessionToken = `sess_google_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -946,7 +938,7 @@ export const App: React.FC = () => {
 
       setUser(googleUser);
       // Store user identity ONLY — zero API keys are stored in localStorage
-      localStorage.setItem('blackhat_user_profile', JSON.stringify(googleUser));
+      localStorage.setItem('blackhat_user_profile_v2', JSON.stringify(googleUser));
 
       // Register session with backend
       fetch(`${API_BASE}/api/auth/session`, {
@@ -970,7 +962,7 @@ export const App: React.FC = () => {
         }
       }));
     } else {
-      const email = manualData?.email?.trim() || 'rittvik@rptu.de';
+      const email = rawEmail;
       const name = manualData?.name?.trim() || email.split('@')[0];
       const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=24292e&color=fff&bold=true`;
       const sessionToken = `sess_github_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -1001,7 +993,7 @@ export const App: React.FC = () => {
       };
 
       setUser(githubUser);
-      localStorage.setItem('blackhat_user_profile', JSON.stringify(githubUser));
+      localStorage.setItem('blackhat_user_profile_v2', JSON.stringify(githubUser));
 
       fetch(`${API_BASE}/api/auth/session`, {
         method: 'POST',
@@ -1024,6 +1016,7 @@ export const App: React.FC = () => {
         body: JSON.stringify({ sessionToken: user.sessionToken })
       }).catch(() => {});
     }
+    localStorage.removeItem('blackhat_user_profile_v2');
     localStorage.removeItem('blackhat_user_profile');
     setUser({
       id: '',

@@ -76,7 +76,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
     server: [
       '[BlackHat Server] Initialized on http://127.0.0.1:3001',
       '[BlackHat Server] WebSocket live event bus connected',
-      '[BlackHat Server] Workspace root: /Users/rittvikvashishtha/BlackHat',
+      '[BlackHat Server] Workspace root initialized',
       '[BlackHat Server] Ready for inter-agent context broadcast'
     ],
     git: [

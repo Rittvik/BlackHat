@@ -2,9 +2,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import os from 'os';
 
 const execAsync = promisify(exec);
-const WORKSPACE_ROOT = process.cwd();
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || (process.cwd() === '/' ? path.join(os.homedir(), 'BlackHat') : process.cwd());
 
 // Cross-platform recursive file search (pure JS - works on Windows, macOS, and Linux)
 async function searchInDirectory(dir, query, maxResults = 30) {

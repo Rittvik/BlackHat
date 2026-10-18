@@ -28,8 +28,8 @@ export const AddAgentModal: React.FC<AddAgentModalProps> = ({
   const [role, setRole] = useState<AgentRole>('CUSTOM');
   const [description, setDescription] = useState('');
   const [avatarColor, setAvatarColor] = useState('bg-purple-600');
-  const [provider, setProvider] = useState<'gemini' | 'anthropic' | 'openai' | 'ollama'>('gemini');
-  const [model, setModel] = useState('gemini-2.5-pro');
+  const [provider, setProvider] = useState<'free' | 'gemini' | 'anthropic' | 'openai' | 'ollama'>('free');
+  const [model, setModel] = useState('deepseek-r1');
   const [systemPrompt, setSystemPrompt] = useState('');
 
   if (!isOpen) return null;
@@ -114,17 +114,19 @@ export const AddAgentModal: React.FC<AddAgentModalProps> = ({
                 onChange={(e) => {
                   const prov = e.target.value as any;
                   setProvider(prov);
-                  if (prov === 'gemini') setModel('gemini-2.5-pro');
+                  if (prov === 'free') setModel('deepseek-r1');
+                  else if (prov === 'gemini') setModel('gemini-2.5-pro');
                   else if (prov === 'anthropic') setModel('claude-3-7-sonnet');
                   else if (prov === 'openai') setModel('gpt-4o');
                   else setModel('llama3.2');
                 }}
                 className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs"
               >
+                <option value="free">✨ Free Cloud Models (Zero Setup)</option>
                 <option value="gemini">Google Gemini</option>
                 <option value="anthropic">Anthropic Claude</option>
                 <option value="openai">OpenAI Codex / GPT-4o</option>
-                <option value="ollama">Local Ollama</option>
+                <option value="ollama">Local Ollama (Offline & Free)</option>
               </select>
             </div>
           </div>

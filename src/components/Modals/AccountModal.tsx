@@ -92,16 +92,22 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 <div className="p-4 rounded-xl bg-ide-panel border border-ide-border flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={user.avatar} 
-                        alt={user.name} 
-                        className="w-12 h-12 rounded-full border border-ide-accent/40 shadow-sm"
-                      />
+                      {user.avatar ? (
+                        <img 
+                          src={user.avatar} 
+                          alt={user.name} 
+                          className="w-12 h-12 rounded-full border border-ide-accent/40 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-[#182335] border border-[#00f0ff]/40 flex items-center justify-center text-[#00f0ff] shadow-sm">
+                          <User className="w-6 h-6" />
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-white">{user.name}</span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-ide-accent/20 text-ide-accent border border-ide-accent/30 font-semibold">
-                            {user.subscriptionTier}
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/30 font-semibold">
+                            {user.subscriptionTier || 'Free'}
                           </span>
                         </div>
                         <span className="text-ide-muted text-[11px]">{user.email}</span>

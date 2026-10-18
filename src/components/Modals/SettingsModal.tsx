@@ -17,7 +17,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<AISettings>({ ...settings });
   const [savedNotification, setSavedNotification] = useState(false);
-  const [activeTab, setActiveTab] = useState<'keys' | 'subscriptions'>('keys');
+  const [activeTab, setActiveTab] = useState<'free-models' | 'keys' | 'subscriptions'>('free-models');
 
   if (!isOpen) return null;
 
@@ -52,6 +52,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="flex border-b border-ide-border bg-ide-darkest px-4 pt-2 gap-4 text-xs shrink-0">
           <button
             type="button"
+            onClick={() => setActiveTab('free-models')}
+            className={`pb-2 font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+              activeTab === 'free-models'
+                ? 'border-ide-accent text-white'
+                : 'border-transparent text-ide-muted hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#00f0ff]" />
+            Free AI Models (No Sub Needed)
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('keys')}
             className={`pb-2 font-medium border-b-2 transition-colors ${
               activeTab === 'keys'
@@ -71,13 +83,98 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-ide-amber" />
-            Paid Subscriptions (Gemini / Claude / Codex)
+            Paid Subscriptions
           </button>
         </div>
 
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4 text-xs font-sans max-h-[70vh] overflow-y-auto">
-          {activeTab === 'keys' ? (
+          {activeTab === 'free-models' && (
+            <div className="space-y-4">
+              {/* Highlight Banner */}
+              <div className="p-3.5 rounded-xl bg-[#091524] border border-[#00f0ff]/30 text-[#cccccc] flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-white font-semibold">
+                  <Sparkles className="w-4 h-4 text-[#00f0ff]" />
+                  <span>Free AI Models Active (No Subscription Required)</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-[#94a3b8]">
+                  Even if you do not have an active AI subscription or do not wish to sign in, BlackHat provides free access to high-performance open coding models.
+                </p>
+              </div>
+
+              {/* Free Models List */}
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-semibold text-white uppercase tracking-wider">
+                  Available Free Models
+                </span>
+
+                {/* DeepSeek R1 */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>DeepSeek R1</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#00f0ff]/15 text-[#00f0ff] font-mono border border-[#00f0ff]/30">FREE</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">Specialized in System Architecture, logic decomposition & planning</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Included</span>
+                </div>
+
+                {/* Qwen 2.5 Coder */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>Qwen 2.5 Coder 32B</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#00f0ff]/15 text-[#00f0ff] font-mono border border-[#00f0ff]/30">FREE</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">State-of-the-art coding, code refactoring & bug fixing</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Included</span>
+                </div>
+
+                {/* Llama 3.3 70B */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>Llama 3.3 70B</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#00f0ff]/15 text-[#00f0ff] font-mono border border-[#00f0ff]/30">FREE</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">Testing assertions, edge cases & regression verification</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Included</span>
+                </div>
+
+                {/* Local Ollama */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>Local Ollama</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#3fb950]/15 text-[#3fb950] font-mono border border-[#3fb950]/30">OFFLINE</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">100% private on your machine (localhost:11434)</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Ready</span>
+                </div>
+              </div>
+
+              {/* Default Free Model */}
+              <div className="space-y-1 pt-2 border-t border-ide-border">
+                <label className="font-medium text-ide-text">Default Model for New Agents</label>
+                <select
+                  value={formData.defaultModel}
+                  onChange={(e) => setFormData({ ...formData, defaultProvider: 'free', defaultModel: e.target.value })}
+                  className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
+                >
+                  <option value="deepseek-r1">DeepSeek R1 [Free]</option>
+                  <option value="qwen-coder">Qwen 2.5 Coder [Free]</option>
+                  <option value="llama-3.3">Llama 3.3 70B [Free]</option>
+                  <option value="mistral">Mistral Small [Free]</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'keys' && (
             <>
               {/* Gemini API Key */}
               <div className="space-y-1">
@@ -148,7 +245,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
               </div>
             </>
-          ) : (
+          )}
+
+          {activeTab === 'subscriptions' && (
             <div className="space-y-3">
               <div className="p-3 rounded-lg bg-ide-accent/10 border border-ide-accent/20 text-ide-text text-[11px] leading-relaxed">
                 Connect your existing subscription plans to unlock enterprise reasoning, higher rate limits, and multi-agent coordination without metered API costs.

@@ -35,8 +35,8 @@ const DEFAULT_SETTINGS: AISettings = {
   anthropicApiKey: '',
   openaiApiKey: '',
   ollamaUrl: 'http://localhost:11434',
-  defaultProvider: 'gemini',
-  defaultModel: 'gemini-2.5-pro',
+  defaultProvider: 'free',
+  defaultModel: 'deepseek-r1',
   subscriptions: {
     gemini: {
       provider: 'gemini',
@@ -82,7 +82,7 @@ export const GOOGLE_USER_RITTVIK: UserProfile = {
 
 const DEFAULT_USER: UserProfile = GOOGLE_USER_RITTVIK;
 
-// Three Default Agents: ARCHITECT, DEVELOPER, TESTER
+// Three Default Agents: ARCHITECT, DEVELOPER, TESTER (Configured with free AI models out of the box)
 const INITIAL_AGENTS: AgentInstance[] = [
   {
     id: 'agent-architect',
@@ -90,8 +90,8 @@ const INITIAL_AGENTS: AgentInstance[] = [
     role: 'ARCHITECT',
     description: 'Decomposes complex requirements into architectural blueprints, data flow models, and technical specifications.',
     avatarColor: 'bg-indigo-600',
-    provider: 'gemini',
-    model: 'gemini-2.5-pro',
+    provider: 'free',
+    model: 'deepseek-r1',
     status: 'idle',
     messages: [],
     input: '',
@@ -104,8 +104,8 @@ const INITIAL_AGENTS: AgentInstance[] = [
     role: 'DEVELOPER',
     description: 'Implements production code, executes tools, refactors modules, and resolves technical defects.',
     avatarColor: 'bg-cyan-600',
-    provider: 'anthropic',
-    model: 'claude-3-7-sonnet',
+    provider: 'free',
+    model: 'qwen-coder',
     status: 'idle',
     messages: [],
     input: '',
@@ -118,8 +118,8 @@ const INITIAL_AGENTS: AgentInstance[] = [
     role: 'TESTER',
     description: 'Automates testing, checks boundary assertions, verifies edge conditions, and enforces regression prevention.',
     avatarColor: 'bg-emerald-600',
-    provider: 'openai',
-    model: 'gpt-4o',
+    provider: 'free',
+    model: 'llama-3.3',
     status: 'idle',
     messages: [],
     input: '',
@@ -676,8 +676,9 @@ export const App: React.FC = () => {
       const activeTab = tabs[activeTabIndex];
       const activeFilePath = activeTab?.path;
 
-      // Check if this provider has an active subscription
+      // Check if this provider has an active subscription or is free tier
       const hasSubscription = 
+        agent.provider === 'free' ||
         (agent.provider === 'gemini' && settings.subscriptions.gemini.isActive) ||
         (agent.provider === 'anthropic' && settings.subscriptions.claude.isActive) ||
         (agent.provider === 'openai' && settings.subscriptions.codex.isActive);

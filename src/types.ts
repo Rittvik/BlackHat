@@ -47,13 +47,15 @@ export interface SharedContextItem {
   relatedFiles?: string[];
 }
 
+export type AIProvider = 'free' | 'gemini' | 'anthropic' | 'openai' | 'ollama';
+
 export interface AgentInstance {
   id: string;
   name: string;
   role: AgentRole;
   description: string;
   avatarColor: string;
-  provider: 'gemini' | 'anthropic' | 'openai' | 'ollama';
+  provider: AIProvider;
   model: string;
   status: AgentStatus;
   currentThought?: string;
@@ -78,7 +80,7 @@ export interface AISettings {
   anthropicApiKey: string;
   openaiApiKey: string;
   ollamaUrl: string;
-  defaultProvider: 'gemini' | 'anthropic' | 'openai' | 'ollama';
+  defaultProvider: AIProvider;
   defaultModel: string;
   subscriptions: {
     gemini: AISubscription;

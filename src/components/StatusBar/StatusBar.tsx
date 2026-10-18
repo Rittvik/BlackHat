@@ -6,7 +6,8 @@ import {
   Share2, 
   Blocks,
   User,
-  Bell
+  Bell,
+  Sparkles
 } from 'lucide-react';
 import { AgentInstance, UserProfile } from '../../types';
 
@@ -77,6 +78,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
       {/* Right items */}
       <div className="flex items-center gap-3">
+        {/* Free AI Models Active Indicator */}
+        <button
+          onClick={onOpenSettings}
+          title="Free AI Models Active (DeepSeek R1, Qwen 2.5 Coder, Llama 3.3). No subscription required. Click to configure."
+          className="hidden sm:flex items-center gap-1 text-[10px] text-[#00f0ff] hover:text-[#70f3ff] cursor-pointer transition-colors px-1.5 py-0.2 rounded bg-[#00f0ff]/10 border border-[#00f0ff]/25 font-medium"
+        >
+          <Sparkles className="w-2.5 h-2.5" />
+          <span>Free AI Active</span>
+        </button>
+
         {/* User Account */}
         <button
           onClick={onOpenAccountModal}

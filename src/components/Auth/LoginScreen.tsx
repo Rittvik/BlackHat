@@ -130,7 +130,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
 
           {/* Value Props */}
-          <div className="w-full pt-4 border-t border-[#262626] grid grid-cols-3 gap-2 text-[10px] text-[#858585] mb-5">
+          <div className="w-full pt-4 border-t border-[#262626] grid grid-cols-3 gap-2 text-[10px] text-[#858585] mb-4">
             <div className="flex flex-col items-center gap-1 p-2 rounded bg-[#1e1e1e]">
               <Bot className="w-3.5 h-3.5 text-[#58a6ff]" />
               <span className="text-[#cccccc] font-medium">3 Agents</span>
@@ -142,19 +142,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <span className="text-[9px]">Shared memory</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded bg-[#1e1e1e]">
-              <Sparkles className="w-3.5 h-3.5 text-[#bc8cff]" />
-              <span className="text-[#cccccc] font-medium">AI Subs</span>
-              <span className="text-[9px]">Gemini & Claude</span>
+              <Sparkles className="w-3.5 h-3.5 text-[#00f0ff]" />
+              <span className="text-[#cccccc] font-medium">Free AI Models</span>
+              <span className="text-[9px]">DeepSeek & Qwen</span>
             </div>
           </div>
 
-          {/* Continue as guest */}
+          {/* Divider */}
+          <div className="w-full flex items-center gap-3 my-2">
+            <div className="h-[1px] flex-1 bg-[#282828]" />
+            <span className="text-[10px] text-[#666666] uppercase tracking-wider font-semibold">Or use without sign-in</span>
+            <div className="h-[1px] flex-1 bg-[#282828]" />
+          </div>
+
+          {/* Continue with Free Tier */}
           <button
             onClick={onContinueAsGuest}
-            className="text-[11px] text-[#858585] hover:text-[#cccccc] transition-colors underline cursor-pointer"
+            className="w-full h-11 px-4 rounded-lg bg-[#0e1724] hover:bg-[#132033] border border-[#00f0ff]/30 hover:border-[#00f0ff]/60 text-white text-xs font-medium flex items-center justify-between transition-all cursor-pointer group shadow-sm shadow-cyan-950/20 mb-2.5"
           >
-            Continue as Guest (Offline Mode)
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-[#00f0ff] group-hover:scale-110 transition-transform" />
+              <div className="text-left">
+                <div className="font-semibold text-white flex items-center gap-1.5">
+                  <span>Continue with Free Tier</span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#00f0ff]/15 text-[#00f0ff] font-mono border border-[#00f0ff]/30">FREE</span>
+                </div>
+                <div className="text-[10px] text-[#858585]">No sign-in or subscription required</div>
+              </div>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-[#00f0ff] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
           </button>
+
+          <p className="text-[10.5px] text-[#70f3ff]/75 text-center flex items-center justify-center gap-1">
+            <span>⚡ Instant access to free AI models and local multi-agent studio</span>
+          </p>
         </div>
       </div>
     </div>

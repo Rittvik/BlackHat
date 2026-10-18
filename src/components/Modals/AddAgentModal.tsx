@@ -134,12 +134,56 @@ export const AddAgentModal: React.FC<AddAgentModalProps> = ({
           {/* Model */}
           <div className="space-y-1">
             <label className="font-medium text-ide-text">Model</label>
-            <input
-              type="text"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full px-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
-            />
+            {provider === 'free' ? (
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
+              >
+                <option value="gemini-flash">Google Gemini 2.5 Flash [Free Tier]</option>
+                <option value="codex-mini">OpenAI Codex / GPT-4o mini [Free Tier]</option>
+                <option value="claude-haiku">Anthropic Claude 3.5 Haiku [Free Tier]</option>
+                <option value="deepseek-r1">DeepSeek R1 [Free]</option>
+                <option value="qwen-coder">Qwen 2.5 Coder [Free]</option>
+                <option value="llama-3.3">Llama 3.3 70B [Free]</option>
+                <option value="mistral">Mistral Small [Free]</option>
+              </select>
+            ) : provider === 'gemini' ? (
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
+              >
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast / Free Quota)</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Reasoning)</option>
+              </select>
+            ) : provider === 'anthropic' ? (
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
+              >
+                <option value="claude-3-7-sonnet">Claude 3.7 Sonnet (Hybrid Reasoning)</option>
+                <option value="claude-3-5-haiku">Claude 3.5 Haiku (Fast Free Tier)</option>
+              </select>
+            ) : provider === 'openai' ? (
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
+              >
+                <option value="gpt-4o">GPT-4o (Codex Flagship)</option>
+                <option value="gpt-4o-mini">GPT-4o mini (Free Tier)</option>
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="e.g. llama3.2, codellama, mistral"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-3 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
+              />
+            )}
           </div>
 
           {/* Avatar Color Picker */}

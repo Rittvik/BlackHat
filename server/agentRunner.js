@@ -123,7 +123,11 @@ Verify code correctness, generate unit/integration test suites, simulate adversa
   }
 
   async runFreeModel({ agentId, role, name, prompt, history, model, roleInstructions, workspaceContext, sharedContext, config }) {
-    const modelLabel = model === 'deepseek-r1' ? 'DeepSeek R1 [Free]'
+    const modelLabel = 
+      model === 'gemini-flash' || model === 'gemini-2.5-flash' ? 'Google Gemini 2.5 Flash [Free Tier]'
+      : model === 'codex-mini' || model === 'gpt-4o-mini' ? 'OpenAI Codex / GPT-4o mini [Free Tier]'
+      : model === 'claude-haiku' || model === 'claude-3-5-haiku' ? 'Anthropic Claude 3.5 Haiku [Free Tier]'
+      : model === 'deepseek-r1' ? 'DeepSeek R1 [Free]'
       : model === 'qwen-coder' ? 'Qwen 2.5 Coder [Free]'
       : model === 'llama-3.3' ? 'Llama 3.3 70B [Free]'
       : model === 'mistral' ? 'Mistral Small [Free]'

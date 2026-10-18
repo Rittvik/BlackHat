@@ -108,8 +108,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Free Models List */}
               <div className="space-y-2.5">
                 <span className="text-[11px] font-semibold text-white uppercase tracking-wider">
-                  Available Free Models
+                  Available Free Tier Models
                 </span>
+
+                {/* Google Gemini 2.5 Flash Free Tier */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>Google Gemini 2.5 Flash</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#4285F4]/15 text-[#4285F4] font-mono border border-[#4285F4]/30">FREE TIER</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">Official Google Gemini free tier for sub-second responses & multi-modal reasoning</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Included</span>
+                </div>
+
+                {/* OpenAI Codex / GPT-4o mini Free Tier */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>OpenAI Codex / GPT-4o mini</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#10a37f]/15 text-[#10a37f] font-mono border border-[#10a37f]/30">FREE TIER</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">Official OpenAI free tier coding model for fast completions & scripts</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Included</span>
+                </div>
+
+                {/* Anthropic Claude 3.5 Haiku Free Tier */}
+                <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>Anthropic Claude 3.5 Haiku</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#d97706]/15 text-[#d97706] font-mono border border-[#d97706]/30">FREE TIER</span>
+                    </div>
+                    <div className="text-[10px] text-ide-muted">Official Anthropic Claude lightweight free tier model with low latency</div>
+                  </div>
+                  <span className="text-[10px] text-[#3fb950] font-medium">Included</span>
+                </div>
 
                 {/* DeepSeek R1 */}
                 <div className="p-3 rounded-lg bg-ide-panel border border-ide-border flex items-center justify-between">
@@ -168,6 +204,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, defaultProvider: 'free', defaultModel: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-ide-darkest border border-ide-border rounded text-white focus:outline-none focus:border-ide-accent text-xs font-mono"
                 >
+                  <option value="gemini-flash">Google Gemini 2.5 Flash [Free Tier]</option>
+                  <option value="codex-mini">OpenAI Codex / GPT-4o mini [Free Tier]</option>
+                  <option value="claude-haiku">Anthropic Claude 3.5 Haiku [Free Tier]</option>
                   <option value="deepseek-r1">DeepSeek R1 [Free]</option>
                   <option value="qwen-coder">Qwen 2.5 Coder [Free]</option>
                   <option value="llama-3.3">Llama 3.3 70B [Free]</option>

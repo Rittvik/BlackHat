@@ -191,7 +191,10 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                 }}
                 className="text-[10px] bg-[#222222] border border-[#2b2b2b] text-[#cccccc] rounded px-1.5 py-0.5 focus:outline-none hover:border-[#383838] cursor-pointer"
               >
-                <optgroup label="✨ Free Models (No Subscription Required)">
+                <optgroup label="✨ Free Tier Models (No Subscription Required)">
+                  <option value="free:gemini-flash">Google Gemini 2.5 Flash [Free Tier]</option>
+                  <option value="free:codex-mini">OpenAI Codex / GPT-4o mini [Free Tier]</option>
+                  <option value="free:claude-haiku">Anthropic Claude 3.5 Haiku [Free Tier]</option>
                   <option value="free:deepseek-r1">DeepSeek R1 [Free]</option>
                   <option value="free:qwen-coder">Qwen 2.5 Coder [Free]</option>
                   <option value="free:llama-3.3">Llama 3.3 70B [Free]</option>
@@ -200,7 +203,7 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                 </optgroup>
                 <optgroup label="💎 Pro Subscriptions & Custom Keys">
                   <option value="gemini:gemini-2.5-pro">Gemini 2.5 Pro</option>
-                  <option value="gemini:gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gemini:gemini-2.5-flash">Gemini 2.5 Flash (Pro)</option>
                   <option value="anthropic:claude-3-7-sonnet">Claude 3.7 Sonnet</option>
                   <option value="openai:gpt-4o">OpenAI (GPT-4o)</option>
                 </optgroup>

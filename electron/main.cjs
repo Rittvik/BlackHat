@@ -38,26 +38,15 @@ if (!gotTheLock) {
       return;
     }
 
-    const defaultWorkspace = process.env.WORKSPACE_ROOT || path.join(__dirname, '..');
-    const serverPath = path.join(__dirname, '..', 'server', 'index.js');
-    serverProcess = spawn(process.execPath, [serverPath], {
-      cwd: defaultWorkspace,
-      env: {
-        ...process.env,
-        ELECTRON_RUN_AS_NODE: '1',
-        PORT: PORT.toString(),
-        WORKSPACE_ROOT: defaultWorkspace
-      },
-      stdio: 'inherit'
-    });
-
-    serverProcess.on('error', (err) => {
-      console.error('[BlackHat Server Process Error]:', err);
-    });
-
-    serverProcess.on('exit', (code, signal) => {
-      console.log(`[BlackHat Server Process Exited]: code ${code}, signal ${signal}`);
-    });
+    try {
+      const serverPath = path.join(__dirname, '..', 'server', 'index.js');
+      const { pathToFileURL } = require('url');
+      const serverUrl = pathToFileURL(serverPath).href;
+      await import(serverUrl);
+      console.log(`[BlackHat] Backend server started successfully in-process`);
+    } catch (err) {
+      console.error('[BlackHat Server Startup Error]:', err);
+    }
   }
 
   function createWindow() {

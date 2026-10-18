@@ -11,6 +11,7 @@ import { SettingsModal } from './components/Modals/SettingsModal';
 import { AccountModal } from './components/Modals/AccountModal';
 import { AddAgentModal } from './components/Modals/AddAgentModal';
 import { CommandPalette } from './components/Modals/CommandPalette';
+import { LoginScreen } from './components/Auth/LoginScreen';
 import { 
   FileNode, 
   EditorTab, 
@@ -57,27 +58,14 @@ const DEFAULT_SETTINGS: AISettings = {
 };
 
 const DEFAULT_USER: UserProfile = {
-  id: 'usr_guest',
-  name: 'Dev Operator',
-  email: 'developer@blackhat.ide',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-  provider: 'google',
-  isLoggedIn: true,
-  subscriptionTier: 'Pro',
-  linkedAccounts: {
-    google: {
-      email: 'developer@google.com',
-      name: 'Google Engineer',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      linkedAt: '2026-10-18'
-    },
-    github: {
-      username: 'blackhat-dev',
-      name: 'BlackHat Developer',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
-      linkedAt: '2026-10-18'
-    }
-  }
+  id: '',
+  name: '',
+  email: '',
+  avatar: '',
+  provider: 'guest',
+  isLoggedIn: false,
+  subscriptionTier: 'Free',
+  linkedAccounts: {}
 };
 
 // Three Default Agents: ARCHITECT, DEVELOPER, TESTER
@@ -685,9 +673,34 @@ export const App: React.FC = () => {
     handleSendMessage('agent-tester', 'Validate system security, generate assertion suites, and audit edge cases.');
   };
 
+  const handleContinueAsGuest = () => {
+    setUser({
+      id: 'usr_guest',
+      name: 'Guest Developer',
+      email: 'guest@blackhat.ide',
+      avatar: '',
+      provider: 'guest',
+      isLoggedIn: true,
+      subscriptionTier: 'Free',
+      linkedAccounts: {}
+    });
+  };
+
   const activeTab = tabs[activeTabIndex];
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
   const platform = (window as any).electronAPI?.platform || (navigator.userAgent.includes('Mac') ? 'darwin' : 'win32');
+
+  // If no user is logged in, show initial Login / Authentication screen
+  if (!user.isLoggedIn) {
+    return (
+      <LoginScreen
+        onLogin={handleLogin}
+        onContinueAsGuest={handleContinueAsGuest}
+        isElectron={isElectron}
+        platform={platform}
+      />
+    );
+  }
 
   return (
     <div className="w-screen h-screen flex flex-col bg-[#181818] text-[#cccccc] overflow-hidden select-none font-sans">

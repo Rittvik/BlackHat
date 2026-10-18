@@ -28,6 +28,10 @@
       "server/**/*",
       "package.json"
     ],
+    "asar": true,
+    "asarUnpack": [
+      "server/**/*"
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [

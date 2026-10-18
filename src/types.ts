@@ -129,4 +129,5 @@ export interface TerminalEntry {
   stderr: string;
   exitCode: number;
   timestamp: number;
+  cwd?: string;
 }

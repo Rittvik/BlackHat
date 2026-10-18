@@ -604,15 +604,21 @@ export const App: React.FC = () => {
     setTabs(prev => prev.map(t => ({ ...t, isDirty: false, originalContent: t.content })));
   };
 
-  // Terminal execution
-  const handleRunTerminalCommand = async (command: string) => {
+  // Terminal execution with cwd support
+  const [terminalCwd, setTerminalCwd] = useState<string>('~/BlackHat');
+
+  const handleRunTerminalCommand = async (command: string, cwd?: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/terminal/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command })
+        body: JSON.stringify({ command, cwd: cwd || terminalCwd })
       });
       const data = await res.json();
+      const newCwd = data.cwd || cwd || terminalCwd;
+      if (data.cwd) {
+        setTerminalCwd(data.cwd);
+      }
       setTerminalEntries(prev => [
         ...prev,
         {
@@ -621,22 +627,36 @@ export const App: React.FC = () => {
           stdout: data.stdout || '',
           stderr: data.stderr || '',
           exitCode: data.exitCode,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          cwd: newCwd
         }
       ]);
       loadFiles();
+      return {
+        success: data.success,
+        stdout: data.stdout || '',
+        stderr: data.stderr || '',
+        exitCode: data.exitCode,
+        cwd: newCwd
+      };
     } catch (err: any) {
-      setTerminalEntries(prev => [
-        ...prev,
-        {
-          id: `cmd_${Date.now()}`,
-          command,
-          stdout: '',
-          stderr: err.message || 'Error running command',
-          exitCode: 1,
-          timestamp: Date.now()
-        }
-      ]);
+      const errorEntry = {
+        id: `cmd_${Date.now()}`,
+        command,
+        stdout: '',
+        stderr: err.message || 'Error running command',
+        exitCode: 1,
+        timestamp: Date.now(),
+        cwd: terminalCwd
+      };
+      setTerminalEntries(prev => [...prev, errorEntry]);
+      return {
+        success: false,
+        stdout: '',
+        stderr: err.message || 'Error running command',
+        exitCode: 1,
+        cwd: terminalCwd
+      };
     }
   };
 
@@ -1227,9 +1247,11 @@ export const App: React.FC = () => {
           <IntegratedTerminal
             isOpen={isTerminalOpen}
             onToggle={() => setIsTerminalOpen(prev => !prev)}
+            onClose={() => setIsTerminalOpen(false)}
             entries={terminalEntries}
             onRunCommand={handleRunTerminalCommand}
             onClear={() => setTerminalEntries([])}
+            terminalCwd={terminalCwd}
           />
         </div>
 

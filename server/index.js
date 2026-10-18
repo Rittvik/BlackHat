@@ -273,19 +273,58 @@ app.get('/api/git/diff', async (req, res) => {
 
 // 2. Terminal Command Execution
 app.post('/api/terminal/run', async (req, res) => {
-  const { command } = req.body;
+  const { command, cwd: reqCwd } = req.body;
   if (!command) return res.status(400).json({ error: 'Missing command' });
 
   const isWindows = process.platform === 'win32';
   const shell = isWindows ? (process.env.COMSPEC || 'powershell.exe') : (process.env.SHELL || '/bin/zsh');
+  const executionCwd = reqCwd ? path.resolve(WORKSPACE_ROOT, reqCwd) : WORKSPACE_ROOT;
 
-  exec(command, { cwd: WORKSPACE_ROOT, shell }, (error, stdout, stderr) => {
+  const trimmed = command.trim();
+  // Handle cd command navigation
+  if (trimmed === 'cd' || trimmed.startsWith('cd ')) {
+    const targetDir = trimmed === 'cd' ? os.homedir() : trimmed.slice(3).trim();
+    const resolved = path.resolve(executionCwd, targetDir.replace(/^~/, os.homedir()));
+    try {
+      const stat = await fs.stat(resolved);
+      if (stat.isDirectory()) {
+        return res.json({
+          success: true,
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          cwd: resolved
+        });
+      }
+    } catch (e) {
+      return res.json({
+        success: false,
+        stdout: '',
+        stderr: `cd: no such file or directory: ${targetDir}\n`,
+        exitCode: 1,
+        cwd: executionCwd
+      });
+    }
+  }
+
+  exec(command, { cwd: executionCwd, shell }, (error, stdout, stderr) => {
     res.json({
       success: !error,
       stdout: stdout || '',
       stderr: stderr || '',
-      exitCode: error ? (error.code || 1) : 0
+      exitCode: error ? (error.code || 1) : 0,
+      cwd: executionCwd
     });
+  });
+});
+
+app.get('/api/workspace/info', (req, res) => {
+  res.json({
+    workspaceRoot: WORKSPACE_ROOT,
+    username: os.userInfo().username || 'developer',
+    hostname: os.hostname().split('.')[0] || 'localhost',
+    platform: process.platform,
+    homeDir: os.homedir()
   });
 });
 

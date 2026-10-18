@@ -41,36 +41,45 @@ const DEFAULT_SETTINGS: AISettings = {
       provider: 'gemini',
       planName: 'Google Gemini Advanced (Google One)',
       isActive: true,
-      accountEmail: 'developer@google.com',
+      accountEmail: 'rittvik@rptu.de',
       tier: 'Pro'
     },
     claude: {
       provider: 'claude',
       planName: 'Anthropic Claude Code & Pro',
       isActive: true,
-      accountEmail: 'developer@anthropic.com',
+      accountEmail: 'rittvik@rptu.de',
       tier: 'Pro'
     },
     codex: {
       provider: 'codex',
       planName: 'OpenAI ChatGPT Plus / Codex',
       isActive: true,
-      accountEmail: 'developer@openai.com',
+      accountEmail: 'rittvik@rptu.de',
       tier: 'Pro'
     }
   }
 };
 
-const DEFAULT_USER: UserProfile = {
-  id: '',
-  name: '',
-  email: '',
-  avatar: '',
-  provider: 'guest',
-  isLoggedIn: false,
-  subscriptionTier: 'Free',
-  linkedAccounts: {}
+export const GOOGLE_USER_RITTVIK: UserProfile = {
+  id: 'usr_google_rittvik',
+  name: 'Rittvik Vashishtha',
+  email: 'rittvik@rptu.de',
+  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+  provider: 'google',
+  isLoggedIn: true,
+  subscriptionTier: 'Pro',
+  linkedAccounts: {
+    google: {
+      email: 'rittvik@rptu.de',
+      name: 'Rittvik Vashishtha',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+      linkedAt: new Date().toISOString()
+    }
+  }
 };
+
+const DEFAULT_USER: UserProfile = GOOGLE_USER_RITTVIK;
 
 // Three Default Agents: ARCHITECT, DEVELOPER, TESTER
 const INITIAL_AGENTS: AgentInstance[] = [
@@ -262,7 +271,7 @@ export const App: React.FC = () => {
     }
   });
 
-  // User Profile Auth State - CRITICAL FIX: Purge any dummy user or guest
+  // User Profile Auth State - Active Rittvik Vashishtha Google Account
   const [user, setUser] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('blackhat_user_profile');
@@ -272,17 +281,20 @@ export const App: React.FC = () => {
           !parsed.isLoggedIn || 
           parsed.id === 'usr_guest' || 
           parsed.provider === 'guest' || 
+          parsed.email?.includes('alex.rivera') || 
+          parsed.name?.includes('Alex Rivera') ||
           parsed.email === 'guest@blackhat.ide' || 
           parsed.email === 'developer@blackhat.ide'
         ) {
-          localStorage.removeItem('blackhat_user_profile');
-          return DEFAULT_USER;
+          localStorage.setItem('blackhat_user_profile', JSON.stringify(GOOGLE_USER_RITTVIK));
+          return GOOGLE_USER_RITTVIK;
         }
         return parsed;
       }
-      return DEFAULT_USER;
+      localStorage.setItem('blackhat_user_profile', JSON.stringify(GOOGLE_USER_RITTVIK));
+      return GOOGLE_USER_RITTVIK;
     } catch {
-      return DEFAULT_USER;
+      return GOOGLE_USER_RITTVIK;
     }
   });
 
@@ -876,51 +888,38 @@ export const App: React.FC = () => {
   // User Auth operations
   const handleLogin = (provider: 'google' | 'github') => {
     if (provider === 'google') {
-      setUser({
-        id: 'usr_google_102',
-        name: 'Alex Rivera',
-        email: 'alex.rivera@gmail.com',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-        provider: 'google',
-        isLoggedIn: true,
-        subscriptionTier: 'Pro',
-        linkedAccounts: {
-          google: {
-            email: 'alex.rivera@gmail.com',
-            name: 'Alex Rivera',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-            linkedAt: new Date().toISOString()
-          },
-          github: user.linkedAccounts.github
-        }
-      });
+      setUser(GOOGLE_USER_RITTVIK);
+      localStorage.setItem('blackhat_user_profile', JSON.stringify(GOOGLE_USER_RITTVIK));
     } else {
-      setUser({
-        id: 'usr_github_204',
-        name: 'alex-rivera-dev',
-        email: 'alex@github.com',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+      const githubUser: UserProfile = {
+        id: 'usr_github_rittvik',
+        name: 'Rittvik',
+        email: 'rittvik@rptu.de',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
         provider: 'github',
         isLoggedIn: true,
         subscriptionTier: 'Pro',
         linkedAccounts: {
-          google: user.linkedAccounts.google,
+          google: GOOGLE_USER_RITTVIK.linkedAccounts.google,
           github: {
-            username: 'alex-rivera-dev',
-            name: 'Alex Rivera',
-            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+            username: 'Rittvik',
+            name: 'Rittvik Vashishtha',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
             linkedAt: new Date().toISOString()
           }
         }
-      });
+      };
+      setUser(githubUser);
+      localStorage.setItem('blackhat_user_profile', JSON.stringify(githubUser));
     }
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('blackhat_user_profile');
     setUser({
-      id: 'usr_guest',
-      name: 'Guest Developer',
-      email: 'guest@blackhat.ide',
+      id: '',
+      name: '',
+      email: '',
       avatar: '',
       provider: 'guest',
       isLoggedIn: false,

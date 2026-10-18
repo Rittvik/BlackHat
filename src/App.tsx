@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ActivityBar } from './components/Sidebar/ActivityBar';
+import { ActivityBar, SidebarView } from './components/Sidebar/ActivityBar';
 import { FileTree } from './components/Explorer/FileTree';
 import { ExtensionsStore, INITIAL_EXTENSIONS } from './components/Extensions/ExtensionsStore';
+import { GlobalSearch } from './components/Search/GlobalSearch';
+import { SourceControl } from './components/SourceControl/SourceControl';
+import { RunDebug } from './components/RunDebug/RunDebug';
 import { EditorTabs } from './components/Editor/EditorTabs';
 import { MonacoCodeEditor } from './components/Editor/MonacoCodeEditor';
 import { IntegratedTerminal } from './components/Terminal/IntegratedTerminal';
@@ -116,18 +119,105 @@ const INITIAL_AGENTS: AgentInstance[] = [
 
 export const App: React.FC = () => {
   // Navigation & panels
-  const [activeView, setActiveView] = useState<'explorer' | 'search' | 'extensions'>('explorer');
+  const [activeView, setActiveView] = useState<SidebarView>('explorer');
   const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
 
-  // Layout widths & visibility
-  const [sidebarWidth, setSidebarWidth] = useState<number>(260);
-  const [agentWindowWidth, setAgentWindowWidth] = useState<number>(440);
+  // Layout widths & visibility with mouse-drag adjustable state
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('blackhat_sidebar_width');
+      return saved ? Math.max(180, Math.min(650, parseInt(saved, 10))) : 260;
+    } catch {
+      return 260;
+    }
+  });
+
+  const [agentWindowWidth, setAgentWindowWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('blackhat_agent_width');
+      return saved ? Math.max(280, Math.min(850, parseInt(saved, 10))) : 420;
+    } catch {
+      return 420;
+    }
+  });
+
   const [isSidebarVisible, setIsSidebarVisible] = useState<boolean>(true);
   const [isAgentWindowVisible, setIsAgentWindowVisible] = useState<boolean>(true);
+
+  // Mouse resizing refs
+  const isDraggingLeftRef = useRef(false);
+  const isDraggingRightRef = useRef(false);
+
+  const handleStartLeftResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingLeftRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingLeftRef.current) return;
+      // ActivityBar is 48px wide
+      const newWidth = Math.max(180, Math.min(650, moveEvent.clientX - 48));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isDraggingLeftRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setSidebarWidth(w => {
+        localStorage.setItem('blackhat_sidebar_width', w.toString());
+        return w;
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleStartRightResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRightRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRightRef.current) return;
+      const newWidth = Math.max(280, Math.min(850, window.innerWidth - moveEvent.clientX));
+      setAgentWindowWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRightRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setAgentWindowWidth(w => {
+        localStorage.setItem('blackhat_agent_width', w.toString());
+        return w;
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // ActivityBar view selection with collapse toggle
+  const handleSelectActivityView = (view: SidebarView) => {
+    if (activeView === view && isSidebarVisible) {
+      setIsSidebarVisible(false);
+    } else {
+      setActiveView(view);
+      setIsSidebarVisible(true);
+    }
+  };
 
   // Files & Tabs
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
@@ -171,11 +261,25 @@ export const App: React.FC = () => {
     }
   });
 
-  // User Profile Auth State
+  // User Profile Auth State - CRITICAL FIX: Purge any dummy user or guest
   const [user, setUser] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('blackhat_user_profile');
-      return saved ? JSON.parse(saved) : DEFAULT_USER;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          !parsed.isLoggedIn || 
+          parsed.id === 'usr_guest' || 
+          parsed.provider === 'guest' || 
+          parsed.email === 'guest@blackhat.ide' || 
+          parsed.email === 'developer@blackhat.ide'
+        ) {
+          localStorage.removeItem('blackhat_user_profile');
+          return DEFAULT_USER;
+        }
+        return parsed;
+      }
+      return DEFAULT_USER;
     } catch {
       return DEFAULT_USER;
     }
@@ -823,11 +927,12 @@ export const App: React.FC = () => {
       </div>
 
       {/* Main Workspace Body */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left Activity Rail */}
         <ActivityBar
           activeView={activeView}
-          onSelectView={setActiveView}
+          isSidebarVisible={isSidebarVisible}
+          onSelectView={handleSelectActivityView}
           isTerminalOpen={isTerminalOpen}
           onToggleTerminal={() => setIsTerminalOpen(prev => !prev)}
           onOpenSettings={() => setIsSettingsOpen(true)}
@@ -837,16 +942,10 @@ export const App: React.FC = () => {
           installedExtensionsCount={extensions.filter(e => e.installed).length}
         />
 
-        {/* Left Sidebar (Explorer OR Extensions Store) */}
+        {/* Left Sidebar Views (Explorer, Search, Source Control, Run & Debug, Extensions) */}
         {isSidebarVisible && (
-          <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0">
-            {activeView === 'extensions' ? (
-              <ExtensionsStore
-                extensions={extensions}
-                onToggleInstall={handleToggleInstallExtension}
-                onToggleEnable={handleToggleEnableExtension}
-              />
-            ) : (
+          <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden bg-[#181818]">
+            {activeView === 'explorer' && (
               <FileTree
                 files={fileTree}
                 activeFilePath={activeTab?.path}
@@ -856,7 +955,41 @@ export const App: React.FC = () => {
                 onDeleteFile={handleDeleteFile}
               />
             )}
+            {activeView === 'search' && (
+              <GlobalSearch
+                onOpenFile={(path) => handleSelectFile(path)}
+                apiBase={API_BASE}
+              />
+            )}
+            {activeView === 'source-control' && (
+              <SourceControl
+                onOpenFile={(path) => handleSelectFile(path)}
+                apiBase={API_BASE}
+              />
+            )}
+            {activeView === 'run-debug' && (
+              <RunDebug
+                onRunCommand={handleRunTerminalCommand}
+                onOpenTerminal={() => setIsTerminalOpen(true)}
+              />
+            )}
+            {activeView === 'extensions' && (
+              <ExtensionsStore
+                extensions={extensions}
+                onToggleInstall={handleToggleInstallExtension}
+                onToggleEnable={handleToggleEnableExtension}
+              />
+            )}
           </div>
+        )}
+
+        {/* Resizer Splitter for Left Sidebar */}
+        {isSidebarVisible && (
+          <div
+            onMouseDown={handleStartLeftResize}
+            title="Drag to resize sidebar"
+            className="w-[3px] hover:w-[5px] -ml-[1px] bg-transparent hover:bg-[#0078d4] active:bg-[#0078d4] cursor-col-resize z-20 shrink-0 transition-all select-none"
+          />
         )}
 
         {/* Center Editor Area + Terminal */}
@@ -888,9 +1021,18 @@ export const App: React.FC = () => {
           />
         </div>
 
+        {/* Resizer Splitter for Right Agent Window */}
+        {isAgentWindowVisible && (
+          <div
+            onMouseDown={handleStartRightResize}
+            title="Drag to resize agent studio"
+            className="w-[3px] hover:w-[5px] -mr-[1px] bg-transparent hover:bg-[#0078d4] active:bg-[#0078d4] cursor-col-resize z-20 shrink-0 transition-all select-none"
+          />
+        )}
+
         {/* Right Multi-Agent Window (Architect, Developer, Tester, etc.) */}
         {isAgentWindowVisible && (
-          <div style={{ width: `${agentWindowWidth}px` }} className="h-full shrink-0">
+          <div style={{ width: `${agentWindowWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden">
             <AgentWindowContainer
               agents={agents}
               settings={settings}
@@ -899,6 +1041,7 @@ export const App: React.FC = () => {
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenAddAgentModal={() => setIsAddAgentModalOpen(true)}
               onRemoveCustomAgent={handleRemoveCustomAgent}
+              onToggleCollapsePanel={() => setIsAgentWindowVisible(false)}
               onUpdateAgentInput={(id, val) => {
                 setAgents(prev => prev.map(a => a.id === id ? { ...a, input: val } : a));
               }}

@@ -132,6 +132,113 @@ app.delete('/api/file', async (req, res) => {
   }
 });
 
+// 1b. Global Search in Workspace
+app.get('/api/search', async (req, res) => {
+  try {
+    const { q, caseSensitive = 'false', isRegex = 'false' } = req.query;
+    if (!q) return res.json({ success: true, results: [] });
+
+    const results = [];
+    const maxResults = 100;
+    const isCase = caseSensitive === 'true';
+    const isReg = isRegex === 'true';
+    let regex;
+    try {
+      regex = isReg ? new RegExp(q, isCase ? 'g' : 'gi') : null;
+    } catch (e) {
+      return res.status(400).json({ success: false, error: 'Invalid regular expression' });
+    }
+
+    async function searchDir(dir, rel = '', depth = 0) {
+      if (depth > 6 || results.length >= maxResults) return;
+      const full = path.join(dir, rel);
+      let entries = [];
+      try {
+        entries = await fs.readdir(full, { withFileTypes: true });
+      } catch {
+        return;
+      }
+
+      for (const entry of entries) {
+        if (results.length >= maxResults) break;
+        if (['node_modules', '.git', 'dist', 'release', '.DS_Store'].includes(entry.name) || (entry.name.startsWith('.') && entry.name !== '.gitignore')) {
+          continue;
+        }
+        const itemRel = path.join(rel, entry.name);
+        if (entry.isDirectory()) {
+          await searchDir(dir, itemRel, depth + 1);
+        } else {
+          try {
+            const filePath = path.join(dir, itemRel);
+            const content = await fs.readFile(filePath, 'utf-8');
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              if (results.length >= maxResults) break;
+              const line = lines[i];
+              let matched = false;
+              if (regex) {
+                matched = regex.test(line);
+                regex.lastIndex = 0;
+              } else {
+                matched = isCase ? line.includes(q) : line.toLowerCase().includes(q.toLowerCase());
+              }
+              if (matched) {
+                results.push({
+                  path: itemRel,
+                  line: i + 1,
+                  content: line.trim()
+                });
+              }
+            }
+          } catch {
+            // skip binary / unreadable files
+          }
+        }
+      }
+    }
+
+    await searchDir(WORKSPACE_ROOT);
+    res.json({ success: true, results, total: results.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 1c. Git Source Control Endpoints
+app.get('/api/git/status', async (req, res) => {
+  exec('git status --porcelain=v1 && git branch --show-current', { cwd: WORKSPACE_ROOT }, (error, stdout, stderr) => {
+    if (error) {
+      return res.json({ success: false, error: stderr || error.message });
+    }
+    const lines = stdout.trim().split('\n');
+    const branch = lines.pop() || 'main';
+    const files = lines.filter(Boolean).map(line => {
+      const code = line.substring(0, 2).trim();
+      const filePath = line.substring(3).trim();
+      return { code, path: filePath };
+    });
+    res.json({ success: true, branch, files });
+  });
+});
+
+app.post('/api/git/commit', async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Commit message is required' });
+  exec(`git add -A && git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: WORKSPACE_ROOT }, (error, stdout, stderr) => {
+    if (error) {
+      return res.status(500).json({ success: false, error: stderr || error.message });
+    }
+    res.json({ success: true, output: stdout });
+  });
+});
+
+app.get('/api/git/diff', async (req, res) => {
+  const filePath = req.query.path || '';
+  exec(`git diff ${filePath}`, { cwd: WORKSPACE_ROOT }, (error, stdout, stderr) => {
+    res.json({ success: !error, diff: stdout || '' });
+  });
+});
+
 // 2. Terminal Command Execution
 app.post('/api/terminal/run', async (req, res) => {
   const { command } = req.body;

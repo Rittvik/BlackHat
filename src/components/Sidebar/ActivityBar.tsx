@@ -3,17 +3,20 @@ import {
   Files, 
   Search, 
   GitBranch, 
+  Play, 
   Blocks, 
-  Bot, 
   Terminal, 
   Settings, 
   User 
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 
+export type SidebarView = 'explorer' | 'search' | 'source-control' | 'run-debug' | 'extensions';
+
 interface ActivityBarProps {
-  activeView: 'explorer' | 'search' | 'extensions';
-  onSelectView: (view: 'explorer' | 'search' | 'extensions') => void;
+  activeView: SidebarView;
+  isSidebarVisible: boolean;
+  onSelectView: (view: SidebarView) => void;
   isTerminalOpen: boolean;
   onToggleTerminal: () => void;
   onOpenSettings: () => void;
@@ -25,6 +28,7 @@ interface ActivityBarProps {
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({
   activeView,
+  isSidebarVisible,
   onSelectView,
   isTerminalOpen,
   onToggleTerminal,
@@ -34,6 +38,10 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   user,
   installedExtensionsCount
 }) => {
+  const handleItemClick = (view: SidebarView) => {
+    onSelectView(view);
+  };
+
   return (
     <div className="w-[48px] h-full flex flex-col justify-between bg-[#181818] border-r border-[#2b2b2b] select-none shrink-0 z-10">
       {/* Top action icons */}
@@ -41,9 +49,9 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         {/* Explorer */}
         <button
           title="Explorer (Files)"
-          onClick={() => onSelectView('explorer')}
-          className={`w-full h-12 flex items-center justify-center transition-colors relative group ${
-            activeView === 'explorer'
+          onClick={() => handleItemClick('explorer')}
+          className={`w-full h-11 flex items-center justify-center transition-colors relative group ${
+            activeView === 'explorer' && isSidebarVisible
               ? 'text-white border-l-2 border-[#0078d4]'
               : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
           }`}
@@ -51,12 +59,51 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
           <Files className="w-5 h-5 stroke-[1.6]" />
         </button>
 
+        {/* Global Code Search */}
+        <button
+          title="Search Workspace (Code Search)"
+          onClick={() => handleItemClick('search')}
+          className={`w-full h-11 flex items-center justify-center transition-colors relative group ${
+            activeView === 'search' && isSidebarVisible
+              ? 'text-white border-l-2 border-[#0078d4]'
+              : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
+          }`}
+        >
+          <Search className="w-5 h-5 stroke-[1.6]" />
+        </button>
+
+        {/* Source Control */}
+        <button
+          title="Source Control (Git)"
+          onClick={() => handleItemClick('source-control')}
+          className={`w-full h-11 flex items-center justify-center transition-colors relative group ${
+            activeView === 'source-control' && isSidebarVisible
+              ? 'text-white border-l-2 border-[#0078d4]'
+              : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
+          }`}
+        >
+          <GitBranch className="w-5 h-5 stroke-[1.6]" />
+        </button>
+
+        {/* Run and Debug */}
+        <button
+          title="Run and Debug"
+          onClick={() => handleItemClick('run-debug')}
+          className={`w-full h-11 flex items-center justify-center transition-colors relative group ${
+            activeView === 'run-debug' && isSidebarVisible
+              ? 'text-white border-l-2 border-[#0078d4]'
+              : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
+          }`}
+        >
+          <Play className="w-5 h-5 stroke-[1.6]" />
+        </button>
+
         {/* Extensions Store */}
         <button
           title="Extensions Store"
-          onClick={() => onSelectView('extensions')}
-          className={`w-full h-12 flex items-center justify-center transition-colors relative group ${
-            activeView === 'extensions'
+          onClick={() => handleItemClick('extensions')}
+          className={`w-full h-11 flex items-center justify-center transition-colors relative group ${
+            activeView === 'extensions' && isSidebarVisible
               ? 'text-white border-l-2 border-[#0078d4]'
               : 'text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent'
           }`}
@@ -71,7 +118,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         <button
           title="Toggle Terminal (`)"
           onClick={onToggleTerminal}
-          className={`w-full h-12 flex items-center justify-center transition-colors border-l-2 border-transparent ${
+          className={`w-full h-11 flex items-center justify-center transition-colors border-l-2 border-transparent ${
             isTerminalOpen
               ? 'text-white'
               : 'text-[#858585] hover:text-[#cccccc]'
@@ -87,7 +134,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         <button
           title={user.isLoggedIn ? `Account: ${user.name} (${user.provider})` : "Sign In with Google or GitHub"}
           onClick={onOpenAccountModal}
-          className="w-full h-12 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors relative border-l-2 border-transparent"
+          className="w-full h-11 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors relative border-l-2 border-transparent"
         >
           {user.isLoggedIn && user.avatar ? (
             <div className="relative">
@@ -107,7 +154,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         <button
           title="Manage AI Settings & Keys"
           onClick={onOpenSettings}
-          className="w-full h-12 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors border-l-2 border-transparent"
+          className="w-full h-11 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors border-l-2 border-transparent"
         >
           <Settings className="w-5 h-5 stroke-[1.6]" />
         </button>

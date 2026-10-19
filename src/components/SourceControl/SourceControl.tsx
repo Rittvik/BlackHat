@@ -23,6 +23,14 @@ export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBas
   const fetchStatus = async () => {
     setLoading(true);
     try {
+      if ((window as any).electronAPI?.native?.gitStatus) {
+        const data = await (window as any).electronAPI.native.gitStatus(workspaceRoot);
+        if (data.success) {
+          setBranch(data.branch || 'main');
+          setFiles(data.files || []);
+          return;
+        }
+      }
       const headers: Record<string, string> = {};
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${apiBase}/api/git/status`, { headers });
@@ -46,6 +54,19 @@ export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBas
     if (!commitMessage.trim()) return;
     setCommitting(true);
     try {
+      if ((window as any).electronAPI?.native?.gitCommit) {
+        const data = await (window as any).electronAPI.native.gitCommit(commitMessage.trim(), workspaceRoot);
+        if (data.success) {
+          setCommitMessage('');
+          setStatusMessage('Committed successfully');
+          setTimeout(() => setStatusMessage(null), 2500);
+          await fetchStatus();
+          return;
+        } else {
+          alert(data.error || 'Commit failed');
+          return;
+        }
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${apiBase}/api/git/commit`, {

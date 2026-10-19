@@ -114,6 +114,18 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     setError(null);
 
     try {
+      if ((window as any).electronAPI?.native?.validateProject) {
+        const data = await (window as any).electronAPI.native.validateProject(existingPath.trim());
+        if (!data.valid) {
+          setError(data.error || 'The specified directory does not exist or is not a directory.');
+          setIsValidating(false);
+          return;
+        }
+        saveRecentProject(data.path);
+        onOpenWorkspace(data.path, openInNewWindow);
+        onClose();
+        return;
+      }
       const res = await fetch(`${API_BASE}/api/project/validate?path=${encodeURIComponent(existingPath.trim())}`);
       const data = await res.json();
 
@@ -149,6 +161,16 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     const fullProjectPath = `${parentPath.trim().replace(/\/+$/, '')}/${projectName.trim()}`;
 
     try {
+      if ((window as any).electronAPI?.native?.createProject) {
+        const data = await (window as any).electronAPI.native.createProject(fullProjectPath, projectName.trim(), template);
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to create project');
+        }
+        saveRecentProject(data.projectPath);
+        onOpenWorkspace(data.projectPath, openInNewWindow);
+        onClose();
+        return;
+      }
       const res = await fetch(`${API_BASE}/api/project/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

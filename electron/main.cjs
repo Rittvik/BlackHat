@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, shell, Menu, dialog } = require('electron')
 const path = require('path');
 const http = require('http');
 const os = require('os');
+const fs = require('fs/promises');
+const fsSync = require('fs');
+const { exec } = require('child_process');
 
 // Enforce single instance lock to prevent runaway window cascades and duplicate instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -522,6 +525,339 @@ if (!gotTheLock) {
       console.error('Failed to clear electron cache:', err);
     }
     return false;
+  });
+
+  // -------------------------------------------------------------
+  // Native Direct IPC Operations (100% Native, No HTTP / Port Dependency)
+  // -------------------------------------------------------------
+  const resolveTargetRoot = (workspace) => {
+    if (!workspace) return WORKSPACE_ROOT;
+    const candidate = workspace.startsWith('~') ? path.join(os.homedir(), workspace.slice(1)) : workspace;
+    return path.resolve(candidate);
+  };
+
+  const buildNativeFileTree = async (dir, rootDir) => {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const nodes = [];
+    for (const entry of entries) {
+      if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.DS_Store') {
+        continue;
+      }
+      const fullPath = path.join(dir, entry.name);
+      const relPath = path.relative(rootDir, fullPath);
+      if (entry.isDirectory()) {
+        const children = await buildNativeFileTree(fullPath, rootDir);
+        nodes.push({
+          id: relPath,
+          name: entry.name,
+          path: relPath,
+          isDirectory: true,
+          children
+        });
+      } else {
+        nodes.push({
+          id: relPath,
+          name: entry.name,
+          path: relPath,
+          isDirectory: false
+        });
+      }
+    }
+    return nodes.sort((a, b) => {
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  ipcMain.handle('native:list-files', async (_, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const tree = await buildNativeFileTree(root, root);
+      return { success: true, tree };
+    } catch (err) {
+      return { success: false, error: err.message, tree: [] };
+    }
+  });
+
+  ipcMain.handle('native:read-file', async (_, filePath, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const fullPath = path.isAbsolute(filePath) ? filePath : path.resolve(root, filePath);
+      const content = await fs.readFile(fullPath, 'utf8');
+      return { success: true, content };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:write-file', async (_, filePath, content, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const fullPath = path.isAbsolute(filePath) ? filePath : path.resolve(root, filePath);
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, content, 'utf8');
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:create-file', async (_, filePath, isDirectory, content, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const fullPath = path.isAbsolute(filePath) ? filePath : path.resolve(root, filePath);
+      if (isDirectory) {
+        await fs.mkdir(fullPath, { recursive: true });
+      } else {
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, content || '', 'utf8');
+      }
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:delete-file', async (_, filePath, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const fullPath = path.isAbsolute(filePath) ? filePath : path.resolve(root, filePath);
+      await fs.rm(fullPath, { recursive: true, force: true });
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:rename-file', async (_, oldPath, newPath, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const fullOld = path.isAbsolute(oldPath) ? oldPath : path.resolve(root, oldPath);
+      const fullNew = path.isAbsolute(newPath) ? newPath : path.resolve(root, newPath);
+      await fs.mkdir(path.dirname(fullNew), { recursive: true });
+      await fs.rename(fullOld, fullNew);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:duplicate-file', async (_, filePath, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    try {
+      const fullPath = path.isAbsolute(filePath) ? filePath : path.resolve(root, filePath);
+      const ext = path.extname(fullPath);
+      const dir = path.dirname(filePath);
+      const base = path.basename(filePath, ext);
+      const newName = `${base}_copy${ext}`;
+      const newRelPath = dir === '.' ? newName : path.join(dir, newName);
+      const fullNew = path.resolve(root, newRelPath);
+      await fs.copyFile(fullPath, fullNew);
+      return { success: true, newPath: newRelPath };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:git-status', async (_, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    return new Promise((resolve) => {
+      exec('git status --porcelain=v1 && git branch --show-current', { cwd: root }, (error, stdout, stderr) => {
+        if (error) {
+          return resolve({ success: false, error: stderr || error.message, files: [], branch: 'main' });
+        }
+        const lines = stdout.trim().split('\n');
+        const branch = lines.pop() || 'main';
+        const files = lines
+          .filter(l => l.trim().length > 0)
+          .map(line => ({
+            code: line.substring(0, 2).trim(),
+            path: line.substring(3).trim()
+          }));
+        resolve({ success: true, branch, files });
+      });
+    });
+  });
+
+  ipcMain.handle('native:git-commit', async (_, message, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    return new Promise((resolve) => {
+      exec(`git add -A && git commit -m "${(message || '').replace(/"/g, '\\"')}"`, { cwd: root }, (error, stdout, stderr) => {
+        if (error) {
+          return resolve({ success: false, error: stderr || error.message });
+        }
+        resolve({ success: true, stdout });
+      });
+    });
+  });
+
+  ipcMain.handle('native:git-diff', async (_, filePath, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    return new Promise((resolve) => {
+      exec(`git diff ${filePath || ''}`, { cwd: root }, (error, stdout) => {
+        resolve({ success: !error, diff: stdout || '' });
+      });
+    });
+  });
+
+  ipcMain.handle('native:search', async (_, query, caseSensitive, isRegex, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    if (!query) return { success: true, results: [], total: 0 };
+    const results = [];
+    const searchDir = async (dir) => {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.DS_Store') continue;
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            await searchDir(fullPath);
+          } else {
+            try {
+              const content = await fs.readFile(fullPath, 'utf8');
+              const lines = content.split('\n');
+              lines.forEach((line, idx) => {
+                let match = false;
+                if (isRegex) {
+                  try {
+                    const regex = new RegExp(query, caseSensitive ? 'g' : 'gi');
+                    match = regex.test(line);
+                  } catch {
+                    match = false;
+                  }
+                } else {
+                  match = caseSensitive ? line.includes(query) : line.toLowerCase().includes(query.toLowerCase());
+                }
+                if (match) {
+                  results.push({
+                    path: path.relative(root, fullPath),
+                    line: idx + 1,
+                    content: line.trim()
+                  });
+                }
+              });
+            } catch {
+              // skip binary or unreadable files
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    await searchDir(root);
+    return { success: true, results, total: results.length };
+  });
+
+  ipcMain.handle('native:run-terminal', async (_, command, reqCwd) => {
+    const isWindows = process.platform === 'win32';
+    const shell = isWindows ? (process.env.COMSPEC || 'powershell.exe') : (process.env.SHELL || '/bin/zsh');
+    let executionCwd = WORKSPACE_ROOT;
+    if (reqCwd) {
+      const candidate = reqCwd.startsWith('~') ? path.join(os.homedir(), reqCwd.slice(1)) : reqCwd;
+      executionCwd = path.isAbsolute(candidate) ? candidate : path.resolve(WORKSPACE_ROOT, candidate);
+    }
+    try {
+      const s = await fs.stat(executionCwd);
+      if (!s.isDirectory()) executionCwd = WORKSPACE_ROOT;
+    } catch {
+      executionCwd = WORKSPACE_ROOT;
+    }
+
+    const cwdMarker = `___BLACKHAT_CWD_${Date.now()}___`;
+    let wrappedCommand;
+    if (isWindows) {
+      wrappedCommand = `${command}; Write-Output "${cwdMarker}$((Get-Location).Path)"`;
+    } else {
+      wrappedCommand = `${command}; echo "${cwdMarker}$(pwd)"`;
+    }
+
+    return new Promise((resolve) => {
+      exec(wrappedCommand, { cwd: executionCwd, shell, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+        let finalCwd = executionCwd;
+        let cleanStdout = stdout || '';
+        if (cleanStdout.includes(cwdMarker)) {
+          const parts = cleanStdout.split(cwdMarker);
+          cleanStdout = parts[0];
+          const extracted = parts[1]?.trim().split(/\r?\n/)[0];
+          if (extracted && fsSync.existsSync(extracted)) {
+            finalCwd = extracted;
+          }
+        }
+        resolve({
+          success: !error || error.code === 0,
+          stdout: cleanStdout,
+          stderr: stderr || '',
+          exitCode: error ? (error.code ?? 1) : 0,
+          cwd: finalCwd
+        });
+      });
+    });
+  });
+
+  ipcMain.handle('native:create-project', async (_, projectPath, projectName, template) => {
+    const baseDir = projectPath ? path.resolve(projectPath) : path.join(os.homedir(), projectName || 'project');
+    try {
+      await fs.mkdir(baseDir, { recursive: true });
+      const entries = await fs.readdir(baseDir);
+      if (entries.length === 0) {
+        const safeName = (projectName || path.basename(baseDir)).toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+        if (template === 'react-ts' || template === 'typescript') {
+          await fs.writeFile(path.join(baseDir, 'package.json'), JSON.stringify({
+            name: safeName,
+            version: '1.0.0',
+            private: true,
+            type: 'module',
+            scripts: { dev: 'vite', build: 'tsc && vite build' }
+          }, null, 2));
+          await fs.mkdir(path.join(baseDir, 'src'), { recursive: true });
+          await fs.writeFile(path.join(baseDir, 'src', 'index.ts'), `// Entry point for ${projectName || path.basename(baseDir)}\nconsole.log('Welcome to ${projectName || path.basename(baseDir)} built with BlackHat IDE');\n`);
+          await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nProject initialized in BlackHat IDE.\n`);
+        } else if (template === 'python') {
+          await fs.writeFile(path.join(baseDir, 'main.py'), `# Entry point for ${projectName || path.basename(baseDir)}\ndef main():\n    print("Hello from BlackHat IDE!")\n\nif __name__ == "__main__":\n    main()\n`);
+          await fs.writeFile(path.join(baseDir, 'requirements.txt'), `# Project dependencies\n`);
+          await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nPython project created in BlackHat IDE.\n`);
+        } else if (template === 'node') {
+          await fs.writeFile(path.join(baseDir, 'package.json'), JSON.stringify({
+            name: safeName,
+            version: '1.0.0',
+            main: 'index.js',
+            type: 'module'
+          }, null, 2));
+          await fs.writeFile(path.join(baseDir, 'index.js'), `// ${projectName || path.basename(baseDir)}\nconsole.log('Node.js service running in BlackHat IDE');\n`);
+          await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nNode.js project created in BlackHat IDE.\n`);
+        } else {
+          await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nWorkspace created in BlackHat IDE.\n`);
+        }
+      }
+      return { success: true, projectPath: baseDir };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:validate-project', async (_, target) => {
+    if (!target || typeof target !== 'string') return { valid: false, error: 'Path is required' };
+    try {
+      const resolved = path.resolve(target.startsWith('~') ? path.join(os.homedir(), target.slice(1)) : target);
+      const exists = fsSync.existsSync(resolved);
+      const isDir = exists && fsSync.statSync(resolved).isDirectory();
+      return { valid: exists && isDir, path: resolved, exists, isDirectory: isDir };
+    } catch (err) {
+      return { valid: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('native:workspace-info', async (_, workspace) => {
+    const root = resolveTargetRoot(workspace);
+    return {
+      workspaceRoot: root,
+      workspaceName: path.basename(root),
+      username: os.userInfo().username || 'developer',
+      hostname: os.hostname().split('.')[0] || 'localhost',
+      platform: process.platform
+    };
   });
 
   app.on('second-instance', () => {

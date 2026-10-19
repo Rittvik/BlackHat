@@ -28,6 +28,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase,
     setLoading(true);
     setSearched(true);
     try {
+      if ((window as any).electronAPI?.native?.search) {
+        const data = await (window as any).electronAPI.native.search(query, caseSensitive, isRegex, workspaceRoot);
+        if (data.success) {
+          setResults(data.results || []);
+          return;
+        }
+      }
       const headers: Record<string, string> = {};
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(

@@ -324,10 +324,17 @@ export const App: React.FC = () => {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [projectModalTab, setProjectModalTab] = useState<'open' | 'create'>('open');
 
-  // Load file tree with dynamic workspace header support
+  // Load file tree with dynamic workspace support (Native IPC preferred, HTTP fallback)
   const loadFiles = async (overrideWorkspace?: string) => {
     try {
       const target = overrideWorkspace !== undefined ? overrideWorkspace : workspaceRoot;
+      if ((window as any).electronAPI?.native?.listFiles) {
+        const data = await (window as any).electronAPI.native.listFiles(target);
+        if (data.success && data.tree) {
+          setFileTree(data.tree);
+          return;
+        }
+      }
       const headers: Record<string, string> = {};
       if (target) headers['x-workspace-root'] = target;
       const url = target 
@@ -345,6 +352,21 @@ export const App: React.FC = () => {
 
   // Synchronize workspace info on mount & update title / terminal
   useEffect(() => {
+    if ((window as any).electronAPI?.native?.workspaceInfo) {
+      (window as any).electronAPI.native.workspaceInfo(workspaceRoot)
+        .then((data: any) => {
+          if (data && data.workspaceRoot) {
+            setWorkspaceRoot(data.workspaceRoot);
+            setTerminalCwd(data.workspaceRoot);
+            const folderName = data.workspaceName || data.workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
+            document.title = `${folderName} - BlackHat`;
+            loadFiles(data.workspaceRoot);
+          }
+        })
+        .catch((err: any) => console.error('Failed to load native workspace info:', err));
+      return;
+    }
+
     if (!workspaceRoot) {
       fetch(`${API_BASE}/api/workspace/info`)
         .then(r => r.json())
@@ -555,7 +577,7 @@ export const App: React.FC = () => {
     }
   }, [tabs, activeTabIndex, workspaceRoot]);
 
-  // File Operations
+  // File Operations (Native Desktop IPC preferred, HTTP fallback)
   const handleSelectFile = async (filePath: string) => {
     const existingIndex = tabs.findIndex(t => t.path === filePath);
     if (existingIndex !== -1) {
@@ -564,6 +586,22 @@ export const App: React.FC = () => {
     }
 
     try {
+      if ((window as any).electronAPI?.native?.readFile) {
+        const data = await (window as any).electronAPI.native.readFile(filePath, workspaceRoot);
+        if (data && data.success) {
+          const newTab: EditorTab = {
+            path: filePath,
+            name: filePath.split('/').pop() || filePath,
+            content: data.content,
+            originalContent: data.content,
+            isDirty: false,
+            language: getLanguageFromPath(filePath)
+          };
+          setTabs(prev => [...prev, newTab]);
+          setActiveTabIndex(tabs.length);
+          return;
+        }
+      }
       const headers: Record<string, string> = {};
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`, { headers });
@@ -587,6 +625,14 @@ export const App: React.FC = () => {
 
   const handleCreateFile = async (filePath: string, isDirectory: boolean) => {
     try {
+      if ((window as any).electronAPI?.native?.createFile) {
+        await (window as any).electronAPI.native.createFile(filePath, isDirectory, '', workspaceRoot);
+        await loadFiles();
+        if (!isDirectory) {
+          await handleSelectFile(filePath);
+        }
+        return;
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       await fetch(`${API_BASE}/api/file/create`, {
@@ -605,6 +651,12 @@ export const App: React.FC = () => {
 
   const handleDeleteFile = async (filePath: string) => {
     try {
+      if ((window as any).electronAPI?.native?.deleteFile) {
+        await (window as any).electronAPI.native.deleteFile(filePath, workspaceRoot);
+        setTabs(prev => prev.filter(t => t.path !== filePath));
+        await loadFiles();
+        return;
+      }
       const headers: Record<string, string> = {};
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`, {
@@ -623,6 +675,13 @@ export const App: React.FC = () => {
     if (!activeTab || !activeTab.isDirty) return;
 
     try {
+      if ((window as any).electronAPI?.native?.writeFile) {
+        await (window as any).electronAPI.native.writeFile(activeTab.path, activeTab.content, workspaceRoot);
+        setTabs(prev => prev.map((t, idx) => 
+          idx === activeTabIndex ? { ...t, isDirty: false, originalContent: t.content } : t
+        ));
+        return;
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       await fetch(`${API_BASE}/api/file`, {
@@ -660,6 +719,18 @@ export const App: React.FC = () => {
 
   const handleRenameFile = async (oldPath: string, newPath: string) => {
     try {
+      if ((window as any).electronAPI?.native?.renameFile) {
+        const data = await (window as any).electronAPI.native.renameFile(oldPath, newPath, workspaceRoot);
+        if (data && data.success) {
+          setTabs(prev => prev.map(t => 
+            t.path === oldPath 
+              ? { ...t, path: newPath, name: newPath.split('/').pop() || newPath, language: getLanguageFromPath(newPath) } 
+              : t
+          ));
+          await loadFiles();
+          return;
+        }
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/file/rename`, {
@@ -683,6 +754,14 @@ export const App: React.FC = () => {
 
   const handleDuplicateFile = async (filePath: string) => {
     try {
+      if ((window as any).electronAPI?.native?.duplicateFile) {
+        const data = await (window as any).electronAPI.native.duplicateFile(filePath, workspaceRoot);
+        if (data && data.success && data.newPath) {
+          await loadFiles();
+          await handleSelectFile(data.newPath);
+          return;
+        }
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/file/duplicate`, {
@@ -710,13 +789,17 @@ export const App: React.FC = () => {
     for (const tab of tabs) {
       if (tab.isDirty) {
         try {
-          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-          if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
-          await fetch(`${API_BASE}/api/file`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ path: tab.path, content: tab.content })
-          });
+          if ((window as any).electronAPI?.native?.writeFile) {
+            await (window as any).electronAPI.native.writeFile(tab.path, tab.content, workspaceRoot);
+          } else {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
+            await fetch(`${API_BASE}/api/file`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ path: tab.path, content: tab.content })
+            });
+          }
         } catch (e) {
           console.error('Failed to save file:', tab.path, e);
         }
@@ -725,11 +808,31 @@ export const App: React.FC = () => {
     setTabs(prev => prev.map(t => ({ ...t, isDirty: false, originalContent: t.content })));
   };
 
-  // Terminal execution with cwd support
+  // Terminal execution with cwd support (Native direct execution preferred)
   const [terminalCwd, setTerminalCwd] = useState<string>('~/BlackHat');
 
   const handleRunTerminalCommand = async (command: string, cwd?: string) => {
     try {
+      if ((window as any).electronAPI?.native?.runTerminal) {
+        const data = await (window as any).electronAPI.native.runTerminal(command, cwd || terminalCwd || workspaceRoot);
+        const newCwd = data.cwd || cwd || terminalCwd;
+        if (data.cwd) {
+          setTerminalCwd(data.cwd);
+        }
+        setTerminalEntries(prev => [
+          ...prev,
+          {
+            id: `cmd_${Date.now()}`,
+            command,
+            stdout: data.stdout || '',
+            stderr: data.stderr || '',
+            exitCode: data.exitCode,
+            timestamp: Date.now(),
+            cwd: newCwd
+          }
+        ]);
+        return data;
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/terminal/run`, {
@@ -754,20 +857,14 @@ export const App: React.FC = () => {
           cwd: newCwd
         }
       ]);
-      loadFiles();
-      return {
-        success: data.success,
-        stdout: data.stdout || '',
-        stderr: data.stderr || '',
-        exitCode: data.exitCode,
-        cwd: newCwd
-      };
+      return data;
     } catch (err: any) {
+      console.error('Failed to run terminal command:', err);
       const errorEntry = {
         id: `cmd_${Date.now()}`,
         command,
         stdout: '',
-        stderr: err.message || 'Error running command',
+        stderr: err?.message || 'Error running command',
         exitCode: 1,
         timestamp: Date.now(),
         cwd: terminalCwd
@@ -776,7 +873,7 @@ export const App: React.FC = () => {
       return {
         success: false,
         stdout: '',
-        stderr: err.message || 'Error running command',
+        stderr: err?.message || 'Error running command',
         exitCode: 1,
         cwd: terminalCwd
       };

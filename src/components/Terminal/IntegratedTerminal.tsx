@@ -110,25 +110,8 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
   ]);
   const debugBottomRef = useRef<HTMLDivElement>(null);
 
-  // Forwarded ports
-  const [forwardedPorts, setForwardedPorts] = useState<ForwardedPort[]>([
-    {
-      id: 'port-1',
-      port: 3001,
-      protocol: 'HTTP',
-      processName: 'node (BlackHat Server)',
-      forwardedAddress: 'http://localhost:3001',
-      status: 'Running'
-    },
-    {
-      id: 'port-2',
-      port: 5173,
-      protocol: 'HTTP',
-      processName: 'vite (Development Server)',
-      forwardedAddress: 'http://localhost:5173',
-      status: 'Running'
-    }
-  ]);
+  // Forwarded ports (user applications / dev servers only, empty by default)
+  const [forwardedPorts, setForwardedPorts] = useState<ForwardedPort[]>([]);
   const [newPortInput, setNewPortInput] = useState('');
 
   // Problems filter
@@ -778,53 +761,65 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
                 </button>
               </form>
 
-              {/* Ports Table */}
+              {/* Ports Table or Empty State */}
               <div className="flex-1 overflow-y-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[#181818] border-b border-[#282828] text-[11px] text-[#858585] uppercase">
-                      <th className="py-2 px-3 font-semibold">Port</th>
-                      <th className="py-2 px-3 font-semibold">Protocol</th>
-                      <th className="py-2 px-3 font-semibold">Process</th>
-                      <th className="py-2 px-3 font-semibold">Local Address</th>
-                      <th className="py-2 px-3 font-semibold">Status</th>
-                      <th className="py-2 px-3 font-semibold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {forwardedPorts.map((p) => (
-                      <tr key={p.id} className="border-b border-[#222222] hover:bg-[#1a1a1a] transition-colors">
-                        <td className="py-2 px-3 font-mono text-[#58a6ff] font-semibold">
-                          {p.port}
-                        </td>
-                        <td className="py-2 px-3 text-[#cccccc]">
-                          {p.protocol}
-                        </td>
-                        <td className="py-2 px-3 text-white font-medium">
-                          {p.processName}
-                        </td>
-                        <td className="py-2 px-3 font-mono text-[#cccccc]">
-                          {p.forwardedAddress}
-                        </td>
-                        <td className="py-2 px-3">
-                          <span className="flex items-center gap-1.5 text-[#3fb950] font-medium text-[11px]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
-                            {p.status}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3 text-right">
-                          <button
-                            onClick={() => handleOpenPortUrl(p.forwardedAddress)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#222222] hover:bg-[#282828] border border-[#333333] hover:border-[#444444] text-white text-[11px] font-medium transition-colors cursor-pointer"
-                          >
-                            <span>Open in Browser</span>
-                            <ExternalLink className="w-3 h-3 text-[#58a6ff]" />
-                          </button>
-                        </td>
+                {forwardedPorts.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 select-none">
+                    <div className="w-12 h-12 rounded-full bg-[#1e1e1e] border border-[#2d2d2d] flex items-center justify-center mb-3">
+                      <Network className="w-5 h-5 text-[#666666]" />
+                    </div>
+                    <p className="text-[13px] font-medium text-[#cccccc] mb-1">No Forwarded Ports</p>
+                    <p className="text-[11px] text-[#777777] max-w-sm leading-relaxed mb-4">
+                      When your application or development process listens on a network port, forwarded addresses will appear here. You can also forward a custom port above.
+                    </p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#181818] border-b border-[#282828] text-[11px] text-[#858585] uppercase">
+                        <th className="py-2 px-3 font-semibold">Port</th>
+                        <th className="py-2 px-3 font-semibold">Protocol</th>
+                        <th className="py-2 px-3 font-semibold">Process</th>
+                        <th className="py-2 px-3 font-semibold">Local Address</th>
+                        <th className="py-2 px-3 font-semibold">Status</th>
+                        <th className="py-2 px-3 font-semibold text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {forwardedPorts.map((p) => (
+                        <tr key={p.id} className="border-b border-[#222222] hover:bg-[#1a1a1a] transition-colors">
+                          <td className="py-2 px-3 font-mono text-[#58a6ff] font-semibold">
+                            {p.port}
+                          </td>
+                          <td className="py-2 px-3 text-[#cccccc]">
+                            {p.protocol}
+                          </td>
+                          <td className="py-2 px-3 text-white font-medium">
+                            {p.processName}
+                          </td>
+                          <td className="py-2 px-3 font-mono text-[#cccccc]">
+                            {p.forwardedAddress}
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className="flex items-center gap-1.5 text-[#3fb950] font-medium text-[11px]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+                              {p.status}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <button
+                              onClick={() => handleOpenPortUrl(p.forwardedAddress)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#222222] hover:bg-[#282828] border border-[#333333] hover:border-[#444444] text-white text-[11px] font-medium transition-colors cursor-pointer"
+                            >
+                              <span>Open in Browser</span>
+                              <ExternalLink className="w-3 h-3 text-[#58a6ff]" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           )}

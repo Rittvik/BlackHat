@@ -325,7 +325,6 @@ Specialist workflow execution for your designated domain.`;
       sharedContext,
       config: { provider, model, user }
     });
-  }
 
     this.emitEvent({ type: 'status', agentId, status: 'idle' });
     this.emitEvent({ type: 'done', agentId });

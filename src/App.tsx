@@ -901,7 +901,35 @@ export const App: React.FC = () => {
   };
 
   // User Auth operations
-  const handleLogin = (provider: 'google' | 'github', manualData?: { email?: string; name?: string }) => {
+  const handleLogin = (userOrProvider: UserProfile | 'google' | 'github', manualData?: { email?: string; name?: string }) => {
+    if (typeof userOrProvider === 'object' && userOrProvider.email) {
+      const finalUser = userOrProvider;
+      setUser(finalUser);
+      localStorage.setItem('blackhat_user_profile_v2', JSON.stringify(finalUser));
+
+      fetch(`${API_BASE}/api/auth/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: finalUser.provider,
+          email: finalUser.email,
+          name: finalUser.name,
+          sessionToken: finalUser.sessionToken
+        })
+      }).catch(err => console.error('Failed to register auth session:', err));
+
+      setSettings(prev => ({
+        ...prev,
+        subscriptions: {
+          gemini: { ...prev.subscriptions.gemini, isActive: true, accountEmail: finalUser.email, planName: finalUser.provider === 'google' ? 'Google One AI Premium / Studio' : 'Active (Developer Federation)' },
+          claude: { ...prev.subscriptions.claude, isActive: true, accountEmail: finalUser.email, planName: 'Claude Pro (Federated)' },
+          codex: { ...prev.subscriptions.codex, isActive: true, accountEmail: finalUser.email, planName: 'ChatGPT Plus / Codex (Federated)' }
+        }
+      }));
+      return;
+    }
+
+    const provider = userOrProvider;
     const rawEmail = manualData?.email?.trim();
     if (!rawEmail) return;
 

@@ -117,6 +117,10 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
   // Problems filter
   const [problemFilter, setProblemFilter] = useState('');
 
+  // Window dimension tracking for dynamic height clamping
+  const [windowHeight, setWindowHeight] = useState(() => typeof window !== 'undefined' ? window.innerHeight : 800);
+  const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
+
   // WebSocket URL resolution
   const getWsUrl = useCallback(() => {
     if (typeof window === 'undefined') return 'ws://127.0.0.1:3001/ws';
@@ -140,6 +144,26 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
       }
     } catch {}
   }, [activeSessionId]);
+
+  // Window resize handler & ResizeObserver
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight);
+      setWindowWidth(window.innerWidth);
+      fitTerminal();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [fitTerminal]);
+
+  useEffect(() => {
+    if (!xtermContainerRef.current) return;
+    const ro = new ResizeObserver(() => {
+      fitTerminal();
+    });
+    ro.observe(xtermContainerRef.current);
+    return () => ro.disconnect();
+  }, [fitTerminal]);
 
   // Connect WebSocket & initialize terminal
   useEffect(() => {
@@ -451,12 +475,17 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
     }
   };
 
+  const maxAllowedHeight = Math.max(120, windowHeight - 140);
+  const effectiveHeight = isMaximized 
+    ? Math.floor(windowHeight * 0.82) 
+    : Math.min(panelHeight, maxAllowedHeight);
+
   return (
     <div 
-      className={`flex flex-col bg-[#14151a]/95 backdrop-blur-2xl border-t border-white/[0.08] select-none relative transition-all duration-150 ${
+      className={`flex flex-col bg-[#14151a]/95 backdrop-blur-2xl border-t border-white/[0.08] select-none relative transition-all duration-150 min-w-0 max-w-full overflow-hidden ${
         isOpen ? '' : 'h-[34px] shrink-0'
       }`}
-      style={isOpen ? { height: `${panelHeight}px` } : undefined}
+      style={isOpen ? { height: `${effectiveHeight}px`, maxHeight: `${maxAllowedHeight}px` } : undefined}
     >
       {/* Top Drag Resizer Handle */}
       {isOpen && (
@@ -468,13 +497,13 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
       )}
 
       {/* Apple macOS Pro Panel Tab Header Bar */}
-      <div className="h-[34px] px-2.5 flex items-center justify-between apple-glass border-b border-white/[0.08] shrink-0 text-xs apple-specular-top">
+      <div className="h-[34px] px-2.5 flex items-center justify-between apple-glass border-b border-white/[0.08] shrink-0 text-xs apple-specular-top min-w-0 max-w-full overflow-hidden">
         {/* Left Side: Apple Segmented Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar h-full py-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto no-scrollbar h-full py-1">
           {/* PROBLEMS Tab */}
           <button
             onClick={() => handleTabClick('problems')}
-            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle shrink-0 ${
               isOpen && activeTab === 'problems'
                 ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
                 : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
@@ -489,7 +518,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* OUTPUT Tab */}
           <button
             onClick={() => handleTabClick('output')}
-            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle shrink-0 ${
               isOpen && activeTab === 'output'
                 ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
                 : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
@@ -501,7 +530,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* DEBUG CONSOLE Tab */}
           <button
             onClick={() => handleTabClick('debug')}
-            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle shrink-0 ${
               isOpen && activeTab === 'debug'
                 ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
                 : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
@@ -513,7 +542,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* TERMINAL Tab */}
           <button
             onClick={() => handleTabClick('terminal')}
-            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle shrink-0 ${
               isOpen && activeTab === 'terminal'
                 ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
                 : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
@@ -526,7 +555,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* PORTS Tab */}
           <button
             onClick={() => handleTabClick('ports')}
-            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle shrink-0 ${
               isOpen && activeTab === 'ports'
                 ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
                 : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
@@ -538,7 +567,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
         </div>
 
         {/* Right Side: Tab Context Controls */}
-        <div className="flex items-center gap-1.5">
+        <div className="shrink-0 flex items-center gap-1 ml-2">
           {/* Terminal-specific controls */}
           {isOpen && activeTab === 'terminal' && (
             <div className="flex items-center gap-1 text-[10px] mr-1">

@@ -457,6 +457,94 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Listen to native macOS / Windows application menu bar commands
+  useEffect(() => {
+    if ((window as any).electronAPI?.onMenuCommand) {
+      const cleanup = (window as any).electronAPI.onMenuCommand((cmd: string) => {
+        switch (cmd) {
+          case 'new-window':
+            handleNewWindow();
+            break;
+          case 'open-project':
+            handleOpenProjectFolder();
+            break;
+          case 'create-new-project':
+            setProjectModalTab('create');
+            setIsProjectModalOpen(true);
+            break;
+          case 'new-file':
+            handleCreateFile('untitled.ts', false);
+            break;
+          case 'new-folder':
+            handleCreateFile('new_folder', true);
+            break;
+          case 'command-palette':
+            setIsCommandPaletteOpen(true);
+            break;
+          case 'save-file':
+            handleSaveFile();
+            break;
+          case 'save-all':
+            handleSaveAllFiles();
+            break;
+          case 'close-active-tab':
+            if (tabs.length > 0) handleCloseTab(activeTabIndex);
+            break;
+          case 'close-all-tabs':
+            setTabs([]);
+            break;
+          case 'open-settings':
+            setIsSettingsOpen(true);
+            break;
+          case 'open-account':
+            setIsAccountModalOpen(true);
+            break;
+          case 'view-explorer':
+            setActiveView('explorer');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-search':
+            setActiveView('search');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-source-control':
+            setActiveView('source-control');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-run-debug':
+            setActiveView('run-debug');
+            setIsSidebarVisible(true);
+            break;
+          case 'view-extensions':
+            setActiveView('extensions');
+            setIsSidebarVisible(true);
+            break;
+          case 'toggle-sidebar':
+            setIsSidebarVisible(prev => !prev);
+            break;
+          case 'toggle-terminal':
+            setIsTerminalOpen(prev => !prev);
+            break;
+          case 'toggle-agent-window':
+            setIsAgentWindowVisible(prev => !prev);
+            break;
+          case 'run-all-agents':
+            handleRunAllThreeAgentsConcurrently();
+            break;
+          case 'next-tab':
+            if (tabs.length > 1) setActiveTabIndex(prev => (prev + 1) % tabs.length);
+            break;
+          case 'prev-tab':
+            if (tabs.length > 1) setActiveTabIndex(prev => (prev - 1 + tabs.length) % tabs.length);
+            break;
+          default:
+            break;
+        }
+      });
+      return () => { if (typeof cleanup === 'function') cleanup(); };
+    }
+  }, [tabs, activeTabIndex]);
+
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1347,77 +1435,80 @@ export const App: React.FC = () => {
           isElectron && platform === 'darwin' ? 'pl-[84px]' : ''
         }`}
       >
-        {/* Left Section: Branding & Menu Bar */}
-        <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          <span className="text-[13px] font-semibold text-white flex items-center gap-2 tracking-tight">
+        {/* Left Section: Branding & (on Windows/Linux) Menu Bar */}
+        <div className="flex items-center gap-2.5 min-w-0 shrink" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <span className="text-[13px] font-semibold text-white flex items-center gap-2 tracking-tight shrink-0">
             <AppLogo size={20} className="w-5 h-5 shrink-0 rounded-md shadow-sm" />
             <span className="bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
               BlackHat
             </span>
             {workspaceRoot && (
-              <span className="text-[11px] font-medium text-white/40 flex items-center gap-1.5 ml-0.5">
+              <span className="hidden sm:inline-flex items-center gap-1.5 ml-0.5 text-[11px] font-medium text-white/40">
                 <span>/</span>
-                <span className="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] text-white/80 font-mono truncate max-w-[150px]">
+                <span className="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] text-white/80 font-mono truncate max-w-[120px] md:max-w-[160px]">
                   {workspaceRoot.split(/[/\\]/).filter(Boolean).pop()}
                 </span>
               </span>
             )}
           </span>
 
-          {/* Apple macOS Pro Application Menu Bar */}
-          <TopMenuBar
-            onNewFile={() => handleCreateFile('untitled.ts', false)}
-            onNewFolder={() => handleCreateFile('new_folder', true)}
-            onNewWindow={handleNewWindow}
-            onOpenProject={handleOpenProjectFolder}
-            onCreateProject={() => {
-              setProjectModalTab('create');
-              setIsProjectModalOpen(true);
-            }}
-            onSaveFile={handleSaveFile}
-            onSaveAllFiles={handleSaveAllFiles}
-            onCloseActiveTab={() => { if (tabs.length > 0) handleCloseTab(activeTabIndex); }}
-            onCloseAllTabs={() => setTabs([])}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenAccount={() => setIsAccountModalOpen(true)}
-            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-            onSelectView={(v) => { setActiveView(v); setIsSidebarVisible(true); }}
-            onToggleSidebar={() => setIsSidebarVisible(prev => !prev)}
-            onToggleTerminal={() => setIsTerminalOpen(prev => !prev)}
-            onToggleAgentStudio={() => setIsAgentWindowVisible(prev => !prev)}
-            onRunAllAgents={handleRunAllThreeAgentsConcurrently}
-            onRunDebugTarget={() => { setActiveView('run-debug'); setIsSidebarVisible(true); }}
-          />
+          {/* On macOS, the menu bar is directly in the system menu bar at top of screen; show in-window menu bar ONLY on Windows/Linux/Web */}
+          {!(isElectron && platform === 'darwin') && (
+            <TopMenuBar
+              onNewFile={() => handleCreateFile('untitled.ts', false)}
+              onNewFolder={() => handleCreateFile('new_folder', true)}
+              onNewWindow={handleNewWindow}
+              onOpenProject={handleOpenProjectFolder}
+              onCreateProject={() => {
+                setProjectModalTab('create');
+                setIsProjectModalOpen(true);
+              }}
+              onSaveFile={handleSaveFile}
+              onSaveAllFiles={handleSaveAllFiles}
+              onCloseActiveTab={() => { if (tabs.length > 0) handleCloseTab(activeTabIndex); }}
+              onCloseAllTabs={() => setTabs([])}
+              onOpenSettings={() => setIsSettingsOpen(true)}
+              onOpenAccount={() => setIsAccountModalOpen(true)}
+              onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+              onSelectView={(v) => { setActiveView(v); setIsSidebarVisible(true); }}
+              onToggleSidebar={() => setIsSidebarVisible(prev => !prev)}
+              onToggleTerminal={() => setIsTerminalOpen(prev => !prev)}
+              onToggleAgentStudio={() => setIsAgentWindowVisible(prev => !prev)}
+              onRunAllAgents={handleRunAllThreeAgentsConcurrently}
+              onRunDebugTarget={() => { setActiveView('run-debug'); setIsSidebarVisible(true); }}
+            />
+          )}
         </div>
 
-        {/* Center Search / Spotlight Command Trigger */}
+        {/* Center Search / Spotlight Command Trigger - Fluid & Responsive */}
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
           style={{ WebkitAppRegion: 'no-drag' } as any}
-          className="w-[390px] max-w-[38vw] h-[28px] rounded-xl bg-white/[0.06] hover:bg-white/[0.09] active:scale-[0.99] border border-white/[0.1] text-[12px] text-white/55 flex items-center justify-between px-3 transition-all cursor-pointer apple-interactive-subtle shadow-inner"
+          className="flex-1 max-w-[420px] min-w-[100px] mx-2 h-[28px] rounded-xl bg-white/[0.06] hover:bg-white/[0.09] active:scale-[0.99] border border-white/[0.1] text-[12px] text-white/55 flex items-center justify-between px-3 transition-all cursor-pointer apple-interactive-subtle shadow-inner"
         >
           <div className="flex items-center gap-2 truncate">
-            <Search className="w-3.5 h-3.5 text-white/50" />
+            <Search className="w-3.5 h-3.5 text-white/50 shrink-0" />
             <span className="truncate tracking-tight font-normal">Spotlight — files, symbols & commands</span>
           </div>
-          <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.09] border border-white/[0.1] text-[10px] font-mono text-white/70 tracking-wider">
+          <kbd className="hidden md:inline-block px-1.5 py-0.5 rounded-md bg-white/[0.09] border border-white/[0.1] text-[10px] font-mono text-white/70 tracking-wider shrink-0 ml-1">
             ⌘P
           </kbd>
         </button>
 
         {/* Right Section: Multi-Agent Launcher, Layout Segmented Toggles & Account */}
-        <div className="flex items-center gap-2.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center gap-2 shrink-0" style={{ WebkitAppRegion: 'no-drag' } as any}>
           {/* Run All Agents: Apple macOS Accent Button */}
           <button
             onClick={handleRunAllThreeAgentsConcurrently}
-            className="apple-btn-accent px-3 py-1 rounded-lg text-white text-[11px] font-medium flex items-center gap-1.5 cursor-pointer"
+            className="apple-btn-accent px-2.5 sm:px-3 py-1 rounded-lg text-white text-[11px] font-medium flex items-center gap-1.5 cursor-pointer shrink-0"
             title="Dispatch Architect, Developer, and Tester simultaneously"
           >
-            <span>⚡ Run All Agents</span>
+            <span>⚡</span>
+            <span className="hidden md:inline">Run All Agents</span>
           </button>
 
           {/* Apple Segmented Layout Controls */}
-          <div className="apple-segmented-group">
+          <div className="apple-segmented-group shrink-0">
             <button
               onClick={() => setIsSidebarVisible(prev => !prev)}
               title={isSidebarVisible ? "Hide Primary SideBar" : "Show Primary SideBar"}
@@ -1452,12 +1543,12 @@ export const App: React.FC = () => {
           {/* User Account / Profile Button */}
           <button
             onClick={() => setIsAccountModalOpen(true)}
-            className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] text-xs flex items-center gap-1.5 text-white/80 transition-all cursor-pointer apple-interactive-subtle"
+            className="px-2 sm:px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] text-xs flex items-center gap-1.5 text-white/80 transition-all cursor-pointer apple-interactive-subtle shrink-0"
           >
             {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-4 h-4 rounded-full object-cover shadow-sm" />
+              <img src={user.avatar} alt={user.name} className="w-4 h-4 rounded-full object-cover shadow-sm shrink-0" />
             ) : null}
-            <span className="text-[11px] font-medium">{user.isLoggedIn ? user.name : 'Sign In'}</span>
+            <span className="hidden sm:inline text-[11px] font-medium">{user.isLoggedIn ? user.name : 'Sign In'}</span>
           </button>
 
           {/* Windows native window controls in Electron */}

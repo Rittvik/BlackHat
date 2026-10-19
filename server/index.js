@@ -1163,6 +1163,10 @@ app.get('/api/extensions/theme', async (req, res) => {
   }
 });
 
+// Serve extension static resources (icons, webviews, syntaxes)
+app.use('/api/extensions/assets', express.static(path.join(os.homedir(), '.blackhat', 'extensions')));
+
+
 // 5b. MCP Server & Tool Endpoints
 app.get('/api/mcp/servers', (req, res) => {
   res.json({ success: true, servers: mcpManager.getServersStatus() });

@@ -10,6 +10,7 @@ export interface TopMenuBarProps {
   onNewWindow?: () => void;
   onOpenProject?: () => void;
   onCreateProject?: () => void;
+  onCloseFolder?: () => void;
   onNewFile: () => void;
   onNewFolder: () => void;
   onSaveFile: () => void;
@@ -19,12 +20,14 @@ export interface TopMenuBarProps {
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenCommandPalette: () => void;
-  onSelectView: (view: 'explorer' | 'search' | 'source-control' | 'run-debug' | 'extensions') => void;
+  onSelectView: (view: 'explorer' | 'search' | 'source-control' | 'run-debug' | 'extensions' | 'codex') => void;
   onToggleSidebar: () => void;
   onToggleTerminal: () => void;
   onToggleAgentStudio: () => void;
   onRunAllAgents: () => void;
   onRunDebugTarget: () => void;
+  onOpenCodex?: () => void;
+  onOpenWelcome?: () => void;
 }
 
 interface MenuItem {
@@ -40,6 +43,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onNewWindow,
   onOpenProject,
   onCreateProject,
+  onCloseFolder,
   onNewFile,
   onNewFolder,
   onSaveFile,
@@ -54,7 +58,9 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onToggleTerminal,
   onToggleAgentStudio,
   onRunAllAgents,
-  onRunDebugTarget
+  onRunDebugTarget,
+  onOpenCodex,
+  onOpenWelcome
 }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,6 +89,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
       { label: 'New Window', shortcut: '⇧⌘N', action: onNewWindow },
       { label: 'Open Folder / Project...', shortcut: '⌘O', action: onOpenProject },
       { label: 'Create New Project...', action: onCreateProject },
+      { label: 'Close Folder', shortcut: '⌘K F', action: onCloseFolder },
       { separator: true },
       { label: 'New Text File', shortcut: '⌘N', action: onNewFile },
       { label: 'New Folder...', action: onNewFolder },
@@ -118,6 +125,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
       { label: 'Command Palette...', shortcut: '⇧⌘P', action: onOpenCommandPalette },
       { separator: true },
       { label: 'Explorer', shortcut: '⇧⌘E', action: () => onSelectView('explorer') },
+      { label: 'Codex – OpenAI Coding Agent', shortcut: '⇧⌘C', action: () => (onOpenCodex ? onOpenCodex() : onSelectView('codex')) },
       { label: 'Search', shortcut: '⇧⌘F', action: () => onSelectView('search') },
       { label: 'Source Control (Git)', shortcut: '⇧⌘G', action: () => onSelectView('source-control') },
       { label: 'Run and Debug', shortcut: '⇧⌘D', action: () => onSelectView('run-debug') },
@@ -144,6 +152,8 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
       { label: 'Toggle Terminal Panel', shortcut: '⌃`', action: onToggleTerminal }
     ],
     Help: [
+      { label: 'Welcome / Get Started', action: onOpenWelcome },
+      { separator: true },
       { label: 'BlackHat GitHub Documentation', action: () => window.open('https://github.com/Rittvik/BlackHat', '_blank') },
       { label: 'Open VSX Marketplace', action: () => window.open('https://open-vsx.org', '_blank') },
       { separator: true },

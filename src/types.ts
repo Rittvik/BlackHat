@@ -32,7 +32,7 @@ export interface AgentMessage {
 
 export type AgentStatus = 'idle' | 'thinking' | 'executing_tool' | 'streaming' | 'error';
 
-export type AgentRole = 'ARCHITECT' | 'DEVELOPER' | 'TESTER' | 'CUSTOM';
+export type AgentRole = 'ARCHITECT' | 'DEVELOPER' | 'TESTER' | 'CODEX' | 'CUSTOM';
 
 export interface SharedContextItem {
   id: string;
@@ -130,9 +130,19 @@ export interface ExtensionItem {
   contributes?: {
     themes?: Array<{ label?: string; uiTheme?: string; path: string }>;
     snippets?: Array<{ language?: string; path: string }>;
-    commands?: Array<{ command: string; title: string }>;
+    commands?: Array<{ command: string; title: string; category?: string; icon?: any }>;
     languages?: any[];
     grammars?: any[];
+    viewsContainers?: {
+      activitybar?: Array<{ id: string; title: string; icon?: string }>;
+      secondarySidebar?: Array<{ id: string; title: string; icon?: string }>;
+      [key: string]: any;
+    };
+    views?: {
+      [containerId: string]: Array<{ id: string; name: string; type?: string }>;
+    };
+    menus?: any;
+    configuration?: any;
   };
 }
 

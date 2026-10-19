@@ -18,6 +18,8 @@ import { ProjectModal } from './components/Modals/ProjectModal';
 import { LoginScreen } from './components/Auth/LoginScreen';
 import { TopMenuBar } from './components/Header/TopMenuBar';
 import { AppLogo } from './components/Common/AppLogo';
+import { CodexSidebar } from './components/Codex/CodexSidebar';
+import { WelcomeScreen } from './components/Welcome/WelcomeScreen';
 import { 
   FileNode, 
   EditorTab, 
@@ -29,7 +31,7 @@ import {
   SharedContextItem 
 } from './types';
 import { getLanguageFromPath } from './utils/language';
-import { PanelLeft, PanelRight, Terminal as TerminalIcon, Search } from 'lucide-react';
+import { PanelLeft, PanelRight, Terminal as TerminalIcon, Search, Sparkles } from 'lucide-react';
 
 const DEFAULT_SETTINGS: AISettings = {
   geminiApiKey: '',
@@ -117,6 +119,20 @@ const INITIAL_AGENTS: AgentInstance[] = [
     input: '',
     isMinimized: false,
     systemPrompt: 'You are the QA & Testing agent in BlackHat IDE. Verify code against architectural specifications, audit boundary limits, and run test suites.'
+  },
+  {
+    id: 'agent-codex',
+    name: 'Codex Agent',
+    role: 'CODEX',
+    description: 'OpenAI Codex coding agent with autonomous file modification, unit test synthesis, and live refactoring.',
+    avatarColor: 'bg-emerald-600',
+    provider: 'free',
+    model: 'codex-mini',
+    status: 'idle',
+    messages: [],
+    input: '',
+    isMinimized: false,
+    systemPrompt: 'You are OpenAI Codex, the autonomous AI coding agent in BlackHat IDE. You write production-ready code, generate comprehensive unit tests, and resolve development tasks autonomously.'
   }
 ];
 
@@ -421,9 +437,41 @@ export const App: React.FC = () => {
     }
   };
 
+  const saveRecentProject = (p: string) => {
+    try {
+      const name = p.split(/[/\\]/).filter(Boolean).pop() || 'Project';
+      const saved = localStorage.getItem('blackhat_recent_projects');
+      const list = saved ? JSON.parse(saved) : [];
+      const updated = [
+        { name, path: p, lastOpened: Date.now() },
+        ...list.filter((item: any) => item.path !== p)
+      ].slice(0, 10);
+      localStorage.setItem('blackhat_recent_projects', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleCloseFolder = () => {
+    setWorkspaceRoot('');
+    setTerminalCwd('');
+    setFileTree([]);
+    setTabs([]);
+    setActiveTabIndex(-1);
+    document.title = 'BlackHat';
+  };
+
   // Synchronize workspace info on mount & update title / terminal
   useEffect(() => {
-    if ((window as any).electronAPI?.native?.workspaceInfo) {
+    if (workspaceRoot) {
+      const folderName = workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
+      document.title = `${folderName} - BlackHat`;
+      setTerminalCwd(workspaceRoot);
+      loadFiles(workspaceRoot);
+      saveRecentProject(workspaceRoot);
+      return;
+    }
+
+    // If native electron window has a target workspace specifically requested
+    if ((window as any).electronAPI?.native?.workspaceInfo && workspaceRoot) {
       (window as any).electronAPI.native.workspaceInfo(workspaceRoot)
         .then((data: any) => {
           if (data && data.workspaceRoot) {
@@ -432,30 +480,10 @@ export const App: React.FC = () => {
             const folderName = data.workspaceName || data.workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
             document.title = `${folderName} - BlackHat`;
             loadFiles(data.workspaceRoot);
+            saveRecentProject(data.workspaceRoot);
           }
         })
         .catch((err: any) => console.error('Failed to load native workspace info:', err));
-      return;
-    }
-
-    if (!workspaceRoot) {
-      fetch(`${API_BASE}/api/workspace/info`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.workspaceRoot) {
-            setWorkspaceRoot(data.workspaceRoot);
-            setTerminalCwd(data.workspaceRoot);
-            const folderName = data.workspaceName || data.workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
-            document.title = `${folderName} - BlackHat`;
-            loadFiles(data.workspaceRoot);
-          }
-        })
-        .catch(err => console.error('Failed to load workspace info:', err));
-    } else {
-      const folderName = workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
-      document.title = `${folderName} - BlackHat`;
-      setTerminalCwd(workspaceRoot);
-      loadFiles(workspaceRoot);
     }
   }, [workspaceRoot]);
 
@@ -480,6 +508,7 @@ export const App: React.FC = () => {
     setTabs([]);
     setActiveTabIndex(-1);
     loadFiles(targetPath);
+    saveRecentProject(targetPath);
     setIsProjectModalOpen(false);
   };
 
@@ -570,6 +599,17 @@ export const App: React.FC = () => {
           case 'open-account':
             setIsAccountModalOpen(true);
             break;
+          case 'close-folder':
+            handleCloseFolder();
+            break;
+          case 'view-codex':
+            setActiveView('codex');
+            setIsSidebarVisible(true);
+            break;
+          case 'open-welcome':
+            setTabs([]);
+            setActiveTabIndex(-1);
+            break;
           case 'view-explorer':
             setActiveView('explorer');
             setIsSidebarVisible(true);
@@ -614,7 +654,7 @@ export const App: React.FC = () => {
       });
       return () => { if (typeof cleanup === 'function') cleanup(); };
     }
-  }, [tabs, activeTabIndex]);
+  }, [tabs, activeTabIndex, workspaceRoot]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -1246,6 +1286,30 @@ export const App: React.FC = () => {
     setAgents(prev => prev.filter(a => a.id !== agentId));
   };
 
+  const handleLaunchCodexAgent = (initialPrompt?: string) => {
+    let codexAgent = agents.find(a => a.id === 'agent-codex' || a.role === 'CODEX');
+    if (!codexAgent) {
+      codexAgent = {
+        id: 'agent-codex',
+        name: 'Codex Agent',
+        role: 'CODEX',
+        description: 'OpenAI Codex autonomous coding agent. Resolves TODOs, implements production code, and synthesizes test suites.',
+        avatarColor: 'bg-emerald-600',
+        provider: settings.subscriptions.codex.isActive ? 'openai' : 'free',
+        model: settings.subscriptions.codex.isActive ? 'gpt-4o' : 'codex-mini',
+        status: 'idle',
+        messages: [],
+        input: initialPrompt || '',
+        isMinimized: false,
+        systemPrompt: 'You are OpenAI Codex, the autonomous AI coding agent in BlackHat IDE. You write production-ready code, generate comprehensive unit tests, and resolve development tasks autonomously.'
+      };
+      setAgents(prev => [codexAgent!, ...prev]);
+    } else if (initialPrompt) {
+      setAgents(prev => prev.map(a => a.id === codexAgent!.id ? { ...a, input: initialPrompt } : a));
+    }
+    setIsAgentWindowVisible(true);
+  };
+
   // Context Bus operations
   const handleShareToContextBus = (title: string, content: string, type: 'plan' | 'code' | 'test' | 'summary') => {
     const newItem: SharedContextItem = {
@@ -1589,6 +1653,7 @@ export const App: React.FC = () => {
                 setProjectModalTab('create');
                 setIsProjectModalOpen(true);
               }}
+              onCloseFolder={handleCloseFolder}
               onSaveFile={handleSaveFile}
               onSaveAllFiles={handleSaveAllFiles}
               onCloseActiveTab={() => { if (tabs.length > 0) handleCloseTab(activeTabIndex); }}
@@ -1602,6 +1667,8 @@ export const App: React.FC = () => {
               onToggleAgentStudio={() => setIsAgentWindowVisible(prev => !prev)}
               onRunAllAgents={handleRunAllThreeAgentsConcurrently}
               onRunDebugTarget={() => { setActiveView('run-debug'); setIsSidebarVisible(true); }}
+              onOpenCodex={() => { setActiveView('codex'); setIsSidebarVisible(true); }}
+              onOpenWelcome={() => { setTabs([]); setActiveTabIndex(-1); }}
             />
           )}
         </div>
@@ -1623,6 +1690,16 @@ export const App: React.FC = () => {
 
         {/* Right Section: Multi-Agent Launcher, Layout Segmented Toggles & Account */}
         <div className="flex items-center gap-2 shrink-0" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {/* OpenAI Codex Action Button */}
+          <button
+            onClick={() => { setActiveView('codex'); setIsSidebarVisible(true); }}
+            className="px-2.5 sm:px-3 py-1 rounded-lg bg-[#10a37f]/15 hover:bg-[#10a37f]/25 text-[#10a37f] border border-[#10a37f]/30 text-[11px] font-medium flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-sm"
+            title="Open OpenAI Codex Assistant & Tools"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Codex</span>
+          </button>
+
           {/* Run All Agents: Apple macOS Accent Button */}
           <button
             onClick={handleRunAllThreeAgentsConcurrently}
@@ -1720,9 +1797,10 @@ export const App: React.FC = () => {
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           user={user}
           installedExtensionsCount={extensions.filter(e => e.installed).length}
+          hasCodexInstalled={extensions.some(e => (e.id.includes('chatgpt') || e.id.includes('codex')) && e.installed)}
         />
 
-        {/* Left Sidebar Views (Explorer, Search, Source Control, Run & Debug, Extensions) */}
+        {/* Left Sidebar Views (Explorer, Codex, Search, Source Control, Run & Debug, Extensions) */}
         {isSidebarVisible && (
           <div style={{ width: `${effectiveSidebarWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden bg-[#16181e]/95 backdrop-blur-2xl border-r border-white/[0.08]">
             {activeView === 'explorer' && (
@@ -1736,6 +1814,26 @@ export const App: React.FC = () => {
                 onRenameFile={handleRenameFile}
                 onDuplicateFile={handleDuplicateFile}
                 onRevealInFinder={handleRevealInFinder}
+                workspaceRoot={workspaceRoot}
+                onOpenFolder={handleOpenProjectFolder}
+                onCreateProject={() => {
+                  setProjectModalTab('create');
+                  setIsProjectModalOpen(true);
+                }}
+              />
+            )}
+            {activeView === 'codex' && (
+              <CodexSidebar
+                settings={settings}
+                user={user}
+                activeFilePath={activeTab?.path}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onOpenAccount={() => setIsAccountModalOpen(true)}
+                onApplyCodeToEditor={(code) => {
+                  if (activeTab) handleChangeEditorContent(code);
+                }}
+                onLaunchCodexAgent={handleLaunchCodexAgent}
+                onRunTerminalCommand={handleRunTerminalCommand}
               />
             )}
             {activeView === 'search' && (
@@ -1781,22 +1879,59 @@ export const App: React.FC = () => {
         )}
 
         {/* Center Editor Area + Terminal */}
-        <div className="flex-1 flex flex-col min-w-[280px] bg-[#1e1e1e] overflow-hidden">
-          {/* Tab Bar */}
-          <EditorTabs
-            tabs={tabs}
-            activeTabIndex={activeTabIndex}
-            onSelectTab={setActiveTabIndex}
-            onCloseTab={handleCloseTab}
-          />
-
-          {/* Monaco Editor */}
-          <div className="flex-1 relative overflow-hidden bg-[#1e1e1e]">
-            <MonacoCodeEditor
-              activeTab={activeTab}
-              onChangeContent={handleChangeEditorContent}
-              onSave={handleSaveFile}
+        <div className="flex-1 flex flex-col min-w-[280px] bg-[#0d1017] overflow-hidden">
+          {/* Tab Bar (Visible when tabs exist) */}
+          {tabs.length > 0 && (
+            <EditorTabs
+              tabs={tabs}
+              activeTabIndex={activeTabIndex}
+              onSelectTab={setActiveTabIndex}
+              onCloseTab={handleCloseTab}
             />
+          )}
+
+          {/* Monaco Editor or VS Code Style Welcome Screen */}
+          <div className="flex-1 relative overflow-hidden bg-[#0d1017]">
+            {!workspaceRoot || tabs.length === 0 ? (
+              <WelcomeScreen
+                onOpenFolder={handleOpenProjectFolder}
+                onCreateProject={() => {
+                  setProjectModalTab('create');
+                  setIsProjectModalOpen(true);
+                }}
+                onNewFile={() => {
+                  const newTab: EditorTab = {
+                    path: 'untitled.ts',
+                    name: 'Untitled-1',
+                    content: '// Welcome to BlackHat IDE\n',
+                    originalContent: '',
+                    isDirty: false,
+                    language: 'typescript'
+                  };
+                  setTabs([newTab]);
+                  setActiveTabIndex(0);
+                }}
+                onOpenRecent={(path) => handleOpenWorkspace(path, false)}
+                onOpenCodex={() => {
+                  setActiveView('codex');
+                  setIsSidebarVisible(true);
+                }}
+                onOpenAgentStudio={() => setIsAgentWindowVisible(true)}
+                onOpenExtensions={() => {
+                  setActiveView('extensions');
+                  setIsSidebarVisible(true);
+                }}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                settings={settings}
+                user={user}
+              />
+            ) : (
+              <MonacoCodeEditor
+                activeTab={activeTab}
+                onChangeContent={handleChangeEditorContent}
+                onSave={handleSaveFile}
+              />
+            )}
           </div>
 
           {/* Integrated Terminal Panel */}

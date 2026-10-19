@@ -29,6 +29,9 @@ interface FileTreeProps {
   onRenameFile?: (oldPath: string, newPath: string) => void;
   onDuplicateFile?: (path: string) => void;
   onRevealInFinder?: (path: string) => void;
+  workspaceRoot?: string;
+  onOpenFolder?: () => void;
+  onCreateProject?: () => void;
 }
 
 interface ContextMenuState {
@@ -63,7 +66,10 @@ export const FileTree: React.FC<FileTreeProps> = ({
   onDeleteFile,
   onRenameFile,
   onDuplicateFile,
-  onRevealInFinder
+  onRevealInFinder,
+  workspaceRoot,
+  onOpenFolder,
+  onCreateProject
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({ '': true });
   const [newPromptPath, setNewPromptPath] = useState<{ parentPath: string; isDir: boolean } | null>(null);
@@ -340,16 +346,42 @@ export const FileTree: React.FC<FileTreeProps> = ({
         </form>
       )}
 
-      {/* File Tree List */}
-      <div className="flex-1 overflow-y-auto py-1">
-        {files.length === 0 ? (
-          <div className="p-4 text-center text-xs text-[#858585]">
-            No files in workspace
+        {!workspaceRoot || files.length === 0 ? (
+          <div className="p-4 space-y-4 text-xs select-none">
+            <div className="space-y-1">
+              <div className="text-white/85 font-semibold uppercase text-[11px] tracking-wider">
+                No Folder Opened
+              </div>
+              <p className="text-white/45 text-[11px] leading-relaxed">
+                You have not yet opened a workspace folder. Open an existing project or create a new project on your laptop.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {onOpenFolder && (
+                <button
+                  onClick={onOpenFolder}
+                  className="w-full py-2 px-3 rounded-xl bg-[#0A84FF] hover:bg-[#0071E3] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm shadow-[#0A84FF]/25"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>Open Folder...</span>
+                </button>
+              )}
+
+              {onCreateProject && (
+                <button
+                  onClick={onCreateProject}
+                  className="w-full py-2 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white/90 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-white/[0.08]"
+                >
+                  <FolderPlus className="w-3.5 h-3.5 text-[#30D158]" />
+                  <span>Create New Project...</span>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           files.map(node => renderNode(node, 0))
         )}
-      </div>
 
       {/* Right Click Context Menu */}
       {contextMenu.visible && (

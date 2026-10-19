@@ -136,6 +136,11 @@ if (!gotTheLock) {
             label: 'Create New Project...',
             click: () => sendMenuCommand('create-new-project')
           },
+          {
+            label: 'Close Folder',
+            accelerator: 'CmdOrCtrl+K CmdOrCtrl+F',
+            click: () => sendMenuCommand('close-folder')
+          },
           { type: 'separator' },
           {
             label: 'New Text File',
@@ -252,6 +257,11 @@ if (!gotTheLock) {
             accelerator: 'CmdOrCtrl+Shift+X',
             click: () => sendMenuCommand('view-extensions')
           },
+          {
+            label: 'Codex – OpenAI Coding Agent',
+            accelerator: 'CmdOrCtrl+Shift+C',
+            click: () => sendMenuCommand('view-codex')
+          },
           { type: 'separator' },
           {
             label: 'Toggle Primary SideBar',
@@ -352,6 +362,11 @@ if (!gotTheLock) {
       {
         label: 'Help',
         submenu: [
+          {
+            label: 'Welcome / Get Started',
+            click: () => sendMenuCommand('open-welcome')
+          },
+          { type: 'separator' },
           {
             label: 'BlackHat Documentation',
             click: () => shell.openExternal('https://github.com/Rittvik/BlackHat')

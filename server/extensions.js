@@ -131,7 +131,11 @@ export class ExtensionService {
         snippets: contributes.snippets || [],
         commands: contributes.commands || [],
         languages: contributes.languages || [],
-        grammars: contributes.grammars || []
+        grammars: contributes.grammars || [],
+        viewsContainers: contributes.viewsContainers || {},
+        views: contributes.views || {},
+        menus: contributes.menus || {},
+        configuration: contributes.configuration || {}
       }
     };
 

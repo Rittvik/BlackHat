@@ -199,11 +199,21 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
       />
 
       {/* Active Agents & Closed Agents Reopen Bar */}
-      <div className="h-[30px] px-2 flex items-center justify-between border-b border-[#2b2b2b] bg-[#141414] overflow-x-auto no-scrollbar shrink-0 text-xs">
+      <div className="h-[32px] px-2 flex items-center justify-between border-b border-white/[0.08] bg-[#0c0e15] overflow-x-auto no-scrollbar shrink-0 text-xs">
         {/* Visible Agents Tabs/Chips */}
         <div className="flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
           {visibleAgents.map((agent) => {
             const isActive = activeTabAgentId === agent.id;
+            const getRoleDot = (role: string) => {
+              switch (role) {
+                case 'ARCHITECT': return 'bg-[#6366F1] shadow-[0_0_6px_#6366F1]';
+                case 'DEVELOPER': return 'bg-[#06B6D4] shadow-[0_0_6px_#06B6D4]';
+                case 'TESTER': return 'bg-[#10B981] shadow-[0_0_6px_#10B981]';
+                case 'CODEX': return 'bg-[#10a37f] shadow-[0_0_6px_#10a37f]';
+                default: return 'bg-[#8B5CF6] shadow-[0_0_6px_#8B5CF6]';
+              }
+            };
+
             return (
               <div
                 key={agent.id}
@@ -217,19 +227,17 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                     toggleCollapse(agent.id);
                   }
                 }}
-                className={`px-2 py-0.5 rounded text-[11px] font-normal flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap group shrink-0 ${
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap group shrink-0 ${
                   isActive
-                    ? 'bg-[#222222] text-white border border-[#333333]'
-                    : 'text-[#858585] hover:text-[#cccccc] hover:bg-[#1a1a1a]'
+                    ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
+                    : 'text-white/50 hover:text-white/80 hover:bg-white/[0.05]'
                 }`}
               >
-                <div className={`w-1.5 h-1.5 rounded-full ${
-                  agent.role === 'ARCHITECT' ? 'bg-[#818cf8]' : agent.role === 'DEVELOPER' ? 'bg-[#58a6ff]' : agent.role === 'TESTER' ? 'bg-[#2ea043]' : 'bg-[#bc8cff]'
-                }`} />
+                <div className={`w-1.5 h-1.5 rounded-full ${getRoleDot(agent.role)}`} />
                 <span>{agent.name.split(' ')[0]}</span>
 
                 {agent.status !== 'idle' && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d29922] animate-ping" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFB020] animate-ping" />
                 )}
 
                 {/* Close Button on chip */}
@@ -239,7 +247,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                     e.stopPropagation();
                     handleCloseAgent(agent.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 hover:text-[#f85149] text-[#858585] transition-opacity ml-0.5 p-0.5"
+                  className="opacity-0 group-hover:opacity-100 hover:text-red-400 text-white/40 transition-opacity ml-0.5 p-0.5 cursor-pointer"
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>

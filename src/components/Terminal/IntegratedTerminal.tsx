@@ -1,24 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
-  Play, 
   Trash2, 
   X, 
   ChevronUp, 
   ChevronDown, 
   Terminal as TerminalIcon, 
-  AlertCircle, 
-  FileText, 
-  Bug, 
   Network, 
   Plus, 
   ExternalLink, 
   Filter, 
   CheckCircle2, 
-  RotateCw,
-  Folder,
   Maximize2,
-  Minimize2
+  Minimize2,
+  RefreshCw
 } from 'lucide-react';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import '@xterm/xterm/css/xterm.css';
 import { TerminalEntry } from '../../types';
 
 export type BottomPanelTab = 'problems' | 'output' | 'debug' | 'terminal' | 'ports';
@@ -32,13 +31,18 @@ interface ForwardedPort {
   status: 'Running' | 'Closed';
 }
 
+interface TerminalSession {
+  id: string;
+  name: string;
+}
+
 interface IntegratedTerminalProps {
   isOpen: boolean;
   onToggle: () => void;
   onClose?: () => void;
-  entries: TerminalEntry[];
-  onRunCommand: (command: string, cwd?: string) => Promise<any>;
-  onClear: () => void;
+  entries?: TerminalEntry[];
+  onRunCommand?: (command: string, cwd?: string) => Promise<any>;
+  onClear?: () => void;
   terminalCwd: string;
 }
 
@@ -46,29 +50,32 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
   isOpen,
   onToggle,
   onClose,
-  entries,
-  onRunCommand,
-  onClear,
   terminalCwd,
 }) => {
   const [activeTab, setActiveTab] = useState<BottomPanelTab>('terminal');
-  const [commandInput, setCommandInput] = useState('');
-  const [isRunning, setIsRunning] = useState(false);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const [activeSession, setActiveSession] = useState<string>('1: zsh');
-  const [terminalSessions, setTerminalSessions] = useState<string[]>(['1: zsh']);
-  
+  const [activeSessionId, setActiveSessionId] = useState<string>('term-1');
+  const [sessions, setSessions] = useState<TerminalSession[]>([
+    { id: 'term-1', name: '1: zsh' }
+  ]);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [preMaxHeight, setPreMaxHeight] = useState<number>(260);
+
   // Resizable panel height
   const [panelHeight, setPanelHeight] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('blackhat_terminal_height');
-      return saved ? Math.max(140, Math.min(650, parseInt(saved, 10))) : 260;
+      return saved ? Math.max(140, Math.min(800, parseInt(saved, 10))) : 260;
     } catch {
       return 260;
     }
   });
   const isDraggingRef = useRef(false);
+
+  // Xterm DOM and Addon References
+  const xtermContainerRef = useRef<HTMLDivElement>(null);
+  const terminalInstanceRef = useRef<Terminal | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Output channels
   const [outputChannel, setOutputChannel] = useState<'server' | 'git' | 'tasks' | 'extension'>('server');
@@ -76,8 +83,8 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
     server: [
       '[BlackHat Server] Initialized on http://127.0.0.1:3001',
       '[BlackHat Server] WebSocket live event bus connected',
-      '[BlackHat Server] Workspace root initialized',
-      '[BlackHat Server] Ready for inter-agent context broadcast'
+      '[BlackHat Server] Native PTY Engine: node-pty with xterm.js',
+      '[BlackHat Server] Workspace root initialized'
     ],
     git: [
       '[Git] On branch main',
@@ -101,6 +108,7 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
   const [debugLogs, setDebugLogs] = useState<Array<{ id: string; type: 'input' | 'output' | 'error'; text: string; time: string }>>([
     { id: '1', type: 'output', text: 'BlackHat Debug Console. Type JavaScript/TypeScript expressions to evaluate.', time: '01:00:00' }
   ]);
+  const debugBottomRef = useRef<HTMLDivElement>(null);
 
   // Forwarded ports
   const [forwardedPorts, setForwardedPorts] = useState<ForwardedPort[]>([
@@ -126,21 +134,242 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
   // Problems filter
   const [problemFilter, setProblemFilter] = useState('');
 
-  const terminalBottomRef = useRef<HTMLDivElement>(null);
-  const terminalInputRef = useRef<HTMLInputElement>(null);
-  const debugBottomRef = useRef<HTMLDivElement>(null);
+  // WebSocket URL resolution
+  const getWsUrl = useCallback(() => {
+    if (typeof window === 'undefined') return 'ws://127.0.0.1:3001/ws';
+    const host = window.location.hostname || '127.0.0.1';
+    return `ws://${host}:3001/ws`;
+  }, []);
 
-  useEffect(() => {
-    if (isOpen && activeTab === 'terminal') {
-      terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [entries, isOpen, activeTab]);
+  // Initialize or fit Xterm
+  const fitTerminal = useCallback(() => {
+    if (!fitAddonRef.current || !terminalInstanceRef.current || !xtermContainerRef.current) return;
+    try {
+      fitAddonRef.current.fit();
+      const term = terminalInstanceRef.current;
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'pty_resize',
+          id: activeSessionId,
+          cols: term.cols,
+          rows: term.rows
+        }));
+      }
+    } catch {}
+  }, [activeSessionId]);
 
+  // Connect WebSocket & initialize terminal
   useEffect(() => {
-    if (isOpen && activeTab === 'debug') {
-      debugBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!isOpen || activeTab !== 'terminal') return;
+
+    let ws: WebSocket;
+    let term: Terminal;
+    let fitAddon: FitAddon;
+
+    if (!terminalInstanceRef.current && xtermContainerRef.current) {
+      term = new Terminal({
+        cursorBlink: true,
+        cursorStyle: 'bar',
+        fontSize: 12,
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        lineHeight: 1.25,
+        theme: {
+          background: '#0d1117',
+          foreground: '#c9d1d9',
+          cursor: '#58a6ff',
+          cursorAccent: '#0d1117',
+          selectionBackground: '#264f78',
+          black: '#000000',
+          red: '#ff7b72',
+          green: '#3fb950',
+          yellow: '#d29922',
+          blue: '#58a6ff',
+          magenta: '#bc8cff',
+          cyan: '#39c5cf',
+          white: '#d0d7de',
+          brightBlack: '#484f58',
+          brightRed: '#ffa198',
+          brightGreen: '#56d364',
+          brightYellow: '#e3b341',
+          brightBlue: '#79c0ff',
+          brightMagenta: '#d2a8ff',
+          brightCyan: '#56d4dd',
+          brightWhite: '#ffffff'
+        },
+        convertEol: true,
+        allowProposedApi: true
+      });
+
+      fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
+      term.loadAddon(new WebLinksAddon());
+
+      term.open(xtermContainerRef.current);
+      terminalInstanceRef.current = term;
+      fitAddonRef.current = fitAddon;
+
+      // Handle user keyboard input
+      term.onData((data) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'pty_input',
+            id: activeSessionId,
+            data
+          }));
+        }
+      });
+    } else {
+      term = terminalInstanceRef.current!;
+      fitAddon = fitAddonRef.current!;
     }
-  }, [debugLogs, isOpen, activeTab]);
+
+    // Connect WebSocket
+    const connectWs = () => {
+      ws = new WebSocket(getWsUrl());
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        requestAnimationFrame(() => {
+          fitAddon.fit();
+          ws.send(JSON.stringify({
+            type: 'pty_init',
+            id: activeSessionId,
+            cols: term.cols || 80,
+            rows: term.rows || 24,
+            cwd: terminalCwd
+          }));
+        });
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'pty_data' && msg.id === activeSessionId) {
+            term.write(msg.data);
+          } else if (msg.type === 'pty_exit' && msg.id === activeSessionId) {
+            term.writeln(`\r\n\x1b[33m[Process exited with code ${msg.exitCode}]\x1b[0m\r\n`);
+          }
+        } catch {}
+      };
+
+      ws.onclose = () => {
+        // Automatically try to reconnect if still active
+      };
+    };
+
+    connectWs();
+
+    // Resize observer on container
+    const resizeObserver = new ResizeObserver(() => {
+      fitTerminal();
+    });
+
+    if (xtermContainerRef.current) {
+      resizeObserver.observe(xtermContainerRef.current);
+    }
+
+    const timer = setTimeout(() => {
+      fitTerminal();
+      term.focus();
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [isOpen, activeTab, activeSessionId, getWsUrl, fitTerminal, terminalCwd]);
+
+  // Window resize handler
+  useEffect(() => {
+    const handleWindowResize = () => {
+      fitTerminal();
+    };
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, [fitTerminal]);
+
+  // Switch session or create new
+  const handleSelectSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    if (terminalInstanceRef.current) {
+      terminalInstanceRef.current.clear();
+    }
+    if (wsRef.current?.readyState === WebSocket.OPEN && terminalInstanceRef.current) {
+      wsRef.current.send(JSON.stringify({
+        type: 'pty_init',
+        id: sessionId,
+        cols: terminalInstanceRef.current.cols,
+        rows: terminalInstanceRef.current.rows,
+        cwd: terminalCwd
+      }));
+    }
+  };
+
+  const handleAddSession = () => {
+    const newNum = sessions.length + 1;
+    const newId = `term-${Date.now()}`;
+    const newSession: TerminalSession = {
+      id: newId,
+      name: `${newNum}: zsh`
+    };
+    setSessions(prev => [...prev, newSession]);
+    handleSelectSession(newId);
+  };
+
+  const handleKillActiveSession = () => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'pty_kill',
+        id: activeSessionId
+      }));
+    }
+    if (terminalInstanceRef.current) {
+      terminalInstanceRef.current.clear();
+      terminalInstanceRef.current.writeln('\x1b[32m[Terminal session restarted]\x1b[0m\r\n');
+    }
+    // Re-initialize immediately
+    setTimeout(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN && terminalInstanceRef.current) {
+        wsRef.current.send(JSON.stringify({
+          type: 'pty_init',
+          id: activeSessionId,
+          cols: terminalInstanceRef.current.cols,
+          rows: terminalInstanceRef.current.rows,
+          cwd: terminalCwd
+        }));
+      }
+    }, 150);
+  };
+
+  const handleClearTerminal = () => {
+    if (terminalInstanceRef.current) {
+      terminalInstanceRef.current.clear();
+      // Send Ctrl+L (clear screen) to pty
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'pty_input',
+          id: activeSessionId,
+          data: '\x0c'
+        }));
+      }
+    }
+  };
+
+  // Toggle maximize
+  const handleToggleMaximize = () => {
+    if (isMaximized) {
+      setPanelHeight(preMaxHeight);
+      setIsMaximized(false);
+    } else {
+      setPreMaxHeight(panelHeight);
+      setPanelHeight(Math.floor(window.innerHeight * 0.85));
+      setIsMaximized(true);
+    }
+    setTimeout(fitTerminal, 50);
+  };
 
   // Drag resizer for height
   const handleStartResize = (e: React.MouseEvent) => {
@@ -151,8 +380,10 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingRef.current) return;
-      const newHeight = Math.max(140, Math.min(650, window.innerHeight - moveEvent.clientY));
+      const newHeight = Math.max(140, Math.min(window.innerHeight - 100, window.innerHeight - moveEvent.clientY));
       setPanelHeight(newHeight);
+      localStorage.setItem('blackhat_terminal_height', String(newHeight));
+      fitTerminal();
     };
 
     const handleMouseUp = () => {
@@ -161,62 +392,11 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
       document.body.style.userSelect = '';
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-      setPanelHeight(h => {
-        localStorage.setItem('blackhat_terminal_height', h.toString());
-        return h;
-      });
+      fitTerminal();
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  };
-
-  // Terminal submit handler
-  const handleCommandSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cmd = commandInput.trim();
-    if (!cmd || isRunning) return;
-
-    setCommandInput('');
-    setCommandHistory(prev => [...prev, cmd]);
-    setHistoryIndex(-1);
-
-    if (cmd === 'clear') {
-      onClear();
-      return;
-    }
-
-    setIsRunning(true);
-    try {
-      await onRunCommand(cmd, terminalCwd);
-    } finally {
-      setIsRunning(false);
-      setTimeout(() => {
-        terminalInputRef.current?.focus();
-      }, 50);
-    }
-  };
-
-  // Keyboard navigation for history
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (commandHistory.length === 0) return;
-      const nextIdx = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
-      setHistoryIndex(nextIdx);
-      setCommandInput(commandHistory[nextIdx]);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (historyIndex === -1) return;
-      const nextIdx = historyIndex + 1;
-      if (nextIdx >= commandHistory.length) {
-        setHistoryIndex(-1);
-        setCommandInput('');
-      } else {
-        setHistoryIndex(nextIdx);
-        setCommandInput(commandHistory[nextIdx]);
-      }
-    }
   };
 
   // Debug REPL submit
@@ -229,7 +409,6 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
     setDebugInput('');
 
     try {
-      // Evaluate expression
       const fn = new Function(`"use strict"; return (${expr});`);
       const result = fn();
       let formatted = typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
@@ -275,22 +454,19 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
     }
   };
 
+  // Switching tabs never collapses panel
   const handleTabClick = (tab: BottomPanelTab) => {
     setActiveTab(tab);
     if (!isOpen) {
       onToggle();
     }
+    if (tab === 'terminal') {
+      setTimeout(() => {
+        fitTerminal();
+        terminalInstanceRef.current?.focus();
+      }, 50);
+    }
   };
-
-  const handleAddTerminalSession = () => {
-    const num = terminalSessions.length + 1;
-    const sessionName = `${num}: zsh`;
-    setTerminalSessions(prev => [...prev, sessionName]);
-    setActiveSession(sessionName);
-  };
-
-  // Clean directory display for prompt
-  const displayCwd = terminalCwd.replace(/^\/Users\/[^/]+/, '~');
 
   return (
     <div 
@@ -381,40 +557,36 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
 
         {/* Right Side: Tab Context Controls */}
         <div className="flex items-center gap-1.5">
-          {/* Terminal-specific shortcuts */}
+          {/* Terminal-specific controls */}
           {isOpen && activeTab === 'terminal' && (
-            <div className="hidden sm:flex items-center gap-1 text-[10px] mr-1">
+            <div className="flex items-center gap-1 text-[10px] mr-1">
               {/* Terminal Session Selector */}
               <select
-                value={activeSession}
-                onChange={(e) => setActiveSession(e.target.value)}
+                value={activeSessionId}
+                onChange={(e) => handleSelectSession(e.target.value)}
                 className="bg-[#222222] border border-[#333333] text-[#cccccc] rounded px-1.5 py-0.5 text-[10px] focus:outline-none cursor-pointer"
               >
-                {terminalSessions.map(s => (
-                  <option key={s} value={s}>{s}</option>
+                {sessions.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
 
               {/* Add New Session */}
               <button
-                title="New Terminal Session"
-                onClick={handleAddTerminalSession}
+                title="New Terminal (Cmd+Shift+`)"
+                onClick={handleAddSession}
                 className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors"
               >
                 <Plus className="w-3 h-3" />
               </button>
 
+              {/* Restart Session */}
               <button
-                onClick={() => onRunCommand('git status --short', terminalCwd)}
-                className="px-1.5 py-0.5 bg-[#222222] hover:bg-[#282828] rounded border border-[#2e2e2e] text-[#858585] hover:text-white font-mono"
+                title="Restart Terminal Process"
+                onClick={handleKillActiveSession}
+                className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors"
               >
-                git status
-              </button>
-              <button
-                onClick={() => onRunCommand('ls -la', terminalCwd)}
-                className="px-1.5 py-0.5 bg-[#222222] hover:bg-[#282828] rounded border border-[#2e2e2e] text-[#858585] hover:text-white font-mono"
-              >
-                ls -la
+                <RefreshCw className="w-3 h-3" />
               </button>
             </div>
           )}
@@ -436,15 +608,26 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* Clear Button */}
           {isOpen && (
             <button 
-              title={activeTab === 'terminal' ? "Clear Terminal" : activeTab === 'debug' ? "Clear Console" : "Clear Output"}
+              title={activeTab === 'terminal' ? "Clear Terminal (Ctrl+L)" : activeTab === 'debug' ? "Clear Console" : "Clear Output"}
               onClick={() => {
-                if (activeTab === 'terminal') onClear();
+                if (activeTab === 'terminal') handleClearTerminal();
                 else if (activeTab === 'debug') setDebugLogs([]);
                 else setOutputLogs(prev => ({ ...prev, [outputChannel]: [] }));
               }}
               className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Maximize / Restore Toggle */}
+          {isOpen && (
+            <button 
+              title={isMaximized ? "Restore Panel Size" : "Maximize Panel Size"}
+              onClick={handleToggleMaximize}
+              className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors"
+            >
+              {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
           )}
 
@@ -474,103 +657,18 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
       {isOpen && (
         <div className="flex-1 flex flex-col min-h-0 bg-[#121212] overflow-hidden font-sans">
           
-          {/* TAB 1: TERMINAL (Interactive zsh Shell) */}
-          {activeTab === 'terminal' && (
+          {/* TAB 1: TERMINAL (Real xterm.js + node-pty Native Terminal) */}
+          <div 
+            className={`flex-1 flex flex-col min-h-0 bg-[#0d1117] p-2 relative ${
+              activeTab === 'terminal' ? 'block' : 'hidden'
+            }`}
+            onClick={() => terminalInstanceRef.current?.focus()}
+          >
             <div 
-              onClick={() => terminalInputRef.current?.focus()}
-              className="flex-1 flex flex-col min-h-0 bg-[#0d1117] font-mono text-xs cursor-text"
-            >
-              {/* Output History Area */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 select-text font-mono">
-                {/* Initial Terminal Banner */}
-                <div className="text-[#6e7681] text-[11px] leading-relaxed mb-2 pb-2 border-b border-[#21262d]">
-                  <div className="text-[#58a6ff] font-semibold flex items-center gap-1.5">
-                    <span>BlackHat Integrated Terminal (zsh)</span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#238636]/20 text-[#3fb950] border border-[#238636]/40">Active</span>
-                  </div>
-                  <div>Working Directory: <span className="text-[#cccccc]">{terminalCwd}</span></div>
-                  <div>Type any command (`npm`, `git`, `python`, `node`, `cd`) or press `Ctrl+C` to interrupt.</div>
-                </div>
-
-                {/* Rendered Command Entries */}
-                {entries.map((entry) => (
-                  <div key={entry.id} className="space-y-1">
-                    {/* Prompt Line */}
-                    <div className="flex items-center gap-2 text-xs flex-wrap">
-                      <span className="text-[#2ea043] font-bold">➜</span>
-                      <span className="text-[#58a6ff] font-semibold">
-                        {(entry.cwd || displayCwd).replace(/^\/Users\/[^/]+/, '~')}
-                      </span>
-                      <span className="text-[#d29922] text-[11px]">git:(<span className="text-[#f0883e]">main</span>)</span>
-                      <span className="text-[#ffffff] font-medium">{entry.command}</span>
-                      <span className={`text-[10px] px-1 rounded font-mono ${
-                        entry.exitCode === 0 ? 'text-[#3fb950]' : 'text-[#f85149] bg-[#f85149]/10'
-                      }`}>
-                        {entry.exitCode === 0 ? '✓' : `exit ${entry.exitCode}`}
-                      </span>
-                    </div>
-
-                    {/* Stdout */}
-                    {entry.stdout && (
-                      <pre className="text-[#c9d1d9] whitespace-pre-wrap pl-3.5 border-l-2 border-[#30363d] text-[11px] leading-relaxed font-mono">
-                        {entry.stdout}
-                      </pre>
-                    )}
-
-                    {/* Stderr */}
-                    {entry.stderr && (
-                      <pre className="text-[#f85149] whitespace-pre-wrap pl-3.5 border-l-2 border-[#f85149]/40 text-[11px] leading-relaxed font-mono">
-                        {entry.stderr}
-                      </pre>
-                    )}
-                  </div>
-                ))}
-
-                <div ref={terminalBottomRef} />
-              </div>
-
-              {/* Live Interactive Command Prompt Line */}
-              <form 
-                onSubmit={handleCommandSubmit}
-                className="h-8 px-3 flex items-center gap-2 bg-[#161b22] border-t border-[#30363d] font-mono shrink-0"
-              >
-                <div className="flex items-center gap-1.5 shrink-0 select-none text-xs">
-                  <span className="text-[#2ea043] font-bold">➜</span>
-                  <span className="text-[#58a6ff] font-semibold">{displayCwd}</span>
-                  <span className="text-[#d29922] text-[11px]">git:(<span className="text-[#f0883e]">main</span>)</span>
-                  <span className="text-[#8b949e]">$</span>
-                </div>
-
-                <input
-                  ref={terminalInputRef}
-                  type="text"
-                  autoFocus
-                  value={commandInput}
-                  disabled={isRunning}
-                  onChange={(e) => setCommandInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={isRunning ? "Executing..." : ""}
-                  className="flex-1 bg-transparent text-xs text-white focus:outline-none font-mono caret-[#58a6ff]"
-                />
-
-                {isRunning ? (
-                  <span className="text-[10px] text-[#58a6ff] flex items-center gap-1 shrink-0 animate-pulse">
-                    <RotateCw className="w-3 h-3 animate-spin" />
-                    Running
-                  </span>
-                ) : (
-                  <button 
-                    type="submit" 
-                    disabled={!commandInput.trim()}
-                    className="px-2 py-0.5 text-[10px] bg-[#0078d4] hover:bg-[#026ec1] disabled:opacity-20 text-white rounded font-sans flex items-center gap-1 shrink-0 cursor-pointer"
-                  >
-                    <Play className="w-2.5 h-2.5 fill-current" />
-                    <span>Run</span>
-                  </button>
-                )}
-              </form>
-            </div>
-          )}
+              ref={xtermContainerRef} 
+              className="w-full h-full overflow-hidden" 
+            />
+          </div>
 
           {/* TAB 2: PROBLEMS (Diagnostics & Linters) */}
           {activeTab === 'problems' && (

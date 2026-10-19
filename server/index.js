@@ -15,11 +15,120 @@ app.use(cors());
 app.use(express.json());
 
 import os from 'os';
+import fsSync from 'fs';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+let pty = null;
+try {
+  pty = require('node-pty');
+} catch (e) {
+  console.warn('[BlackHat Server] node-pty import warning:', e.message);
+}
+
+// Ensure spawn-helper binary has executable permissions on unix systems
+function ensureSpawnHelperPermissions() {
+  try {
+    const ptyPath = require.resolve('node-pty');
+    const ptyDir = path.dirname(ptyPath);
+    const prebuildsDir = path.join(ptyDir, '..', 'prebuilds');
+    if (fsSync.existsSync(prebuildsDir)) {
+      const archDirs = ['darwin-arm64', 'darwin-x64', 'linux-x64', 'linux-arm64'];
+      for (const d of archDirs) {
+        const helperPath = path.join(prebuildsDir, d, 'spawn-helper');
+        if (fsSync.existsSync(helperPath)) {
+          try {
+            fsSync.chmodSync(helperPath, 0o755);
+          } catch {}
+        }
+      }
+    }
+  } catch {}
+}
+ensureSpawnHelperPermissions();
 
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || (process.cwd() === '/' ? path.join(os.homedir(), 'BlackHat') : process.cwd());
 
 // Active agent runners map: agentId -> runner
 const activeRunners = new Map();
+
+// Active PTY terminal sessions map: sessionId -> session object
+const ptySessions = new Map();
+
+function getOrCreatePtySession(sessionId, initialCols = 80, initialRows = 24, initialCwd = WORKSPACE_ROOT) {
+  if (ptySessions.has(sessionId)) {
+    const existing = ptySessions.get(sessionId);
+    if (existing.ptyProcess) {
+      return existing;
+    }
+  }
+
+  ensureSpawnHelperPermissions();
+
+  const isWindows = process.platform === 'win32';
+  const defaultShell = isWindows 
+    ? (process.env.COMSPEC || 'powershell.exe') 
+    : (process.env.SHELL || '/bin/zsh');
+
+  const shell = fsSync.existsSync(defaultShell) 
+    ? defaultShell 
+    : (isWindows ? 'cmd.exe' : '/bin/bash');
+
+  let executionCwd = initialCwd || WORKSPACE_ROOT;
+  try {
+    if (!fsSync.existsSync(executionCwd)) {
+      executionCwd = WORKSPACE_ROOT;
+    }
+  } catch {
+    executionCwd = WORKSPACE_ROOT;
+  }
+
+  const ptyProcess = pty ? pty.spawn(shell, [], {
+    name: 'xterm-256color',
+    cols: Math.max(10, initialCols || 80),
+    rows: Math.max(5, initialRows || 24),
+    cwd: executionCwd,
+    env: {
+      ...process.env,
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor',
+      WORKSPACE_ROOT
+    }
+  }) : null;
+
+  const sessionObj = {
+    id: sessionId,
+    ptyProcess,
+    cwd: executionCwd,
+    historyBuffer: '',
+    subscribers: new Set()
+  };
+
+  if (ptyProcess) {
+    ptyProcess.onData((data) => {
+      sessionObj.historyBuffer = (sessionObj.historyBuffer + data).slice(-50000);
+      const msg = JSON.stringify({ type: 'pty_data', id: sessionId, data });
+      for (const ws of sessionObj.subscribers) {
+        if (ws.readyState === 1) { // WebSocket.OPEN
+          ws.send(msg);
+        }
+      }
+    });
+
+    ptyProcess.onExit(({ exitCode, signal }) => {
+      const msg = JSON.stringify({ type: 'pty_exit', id: sessionId, exitCode, signal });
+      for (const ws of sessionObj.subscribers) {
+        if (ws.readyState === 1) {
+          ws.send(msg);
+        }
+      }
+      ptySessions.delete(sessionId);
+    });
+  }
+
+  ptySessions.set(sessionId, sessionObj);
+  return sessionObj;
+}
 
 // Helper to recursively list files
 async function getFileTree(dir, relativePath = '', depth = 0) {
@@ -472,17 +581,85 @@ app.get('/api/extensions/openvsx', async (req, res) => {
   }
 });
 
-// WebSocket Connection for Terminal & Real-Time Sync
+// WebSocket Connection for Native Terminal & Real-Time Sync
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'connected', time: Date.now() }));
+
+  const subscribedSessions = new Set();
 
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
+
       if (data.type === 'ping') {
         ws.send(JSON.stringify({ type: 'pong' }));
+        return;
       }
-    } catch {}
+
+      if (data.type === 'pty_init') {
+        const sessionId = data.id || 'default';
+        const session = getOrCreatePtySession(sessionId, data.cols, data.rows, data.cwd);
+        session.subscribers.add(ws);
+        subscribedSessions.add(sessionId);
+
+        // Send replay buffer if reattaching
+        if (session.historyBuffer) {
+          ws.send(JSON.stringify({ type: 'pty_data', id: sessionId, data: session.historyBuffer }));
+        }
+
+        // Send ready confirmation
+        ws.send(JSON.stringify({ 
+          type: 'pty_ready', 
+          id: sessionId, 
+          cwd: session.cwd,
+          platform: process.platform 
+        }));
+        return;
+      }
+
+      if (data.type === 'pty_input') {
+        const sessionId = data.id || 'default';
+        const session = ptySessions.get(sessionId);
+        if (session && session.ptyProcess) {
+          session.ptyProcess.write(data.data);
+        }
+        return;
+      }
+
+      if (data.type === 'pty_resize') {
+        const sessionId = data.id || 'default';
+        const session = ptySessions.get(sessionId);
+        if (session && session.ptyProcess && data.cols && data.rows) {
+          try {
+            session.ptyProcess.resize(Math.max(10, data.cols), Math.max(5, data.rows));
+          } catch {}
+        }
+        return;
+      }
+
+      if (data.type === 'pty_kill') {
+        const sessionId = data.id || 'default';
+        const session = ptySessions.get(sessionId);
+        if (session && session.ptyProcess) {
+          try {
+            session.ptyProcess.kill();
+          } catch {}
+          ptySessions.delete(sessionId);
+        }
+        return;
+      }
+    } catch (err) {
+      console.error('[WebSocket] Terminal message error:', err);
+    }
+  });
+
+  ws.on('close', () => {
+    for (const sessionId of subscribedSessions) {
+      const session = ptySessions.get(sessionId);
+      if (session) {
+        session.subscribers.delete(ws);
+      }
+    }
   });
 });
 

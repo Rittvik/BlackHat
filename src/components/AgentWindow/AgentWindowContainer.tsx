@@ -115,42 +115,42 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
   return (
     <div className="w-full h-full flex flex-col bg-[#14151a]/95 backdrop-blur-2xl border-l border-white/[0.08] select-none overflow-hidden font-sans">
       {/* Apple macOS Pro Agent Studio Header */}
-      <div className="h-[38px] px-3.5 flex items-center justify-between border-b border-white/[0.08] apple-glass shrink-0 apple-specular-top">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1 rounded-md bg-[#0A84FF]/15 text-[#0A84FF]">
+      <div className="h-[38px] px-2.5 sm:px-3.5 flex items-center justify-between border-b border-white/[0.08] apple-glass shrink-0 apple-specular-top gap-1 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-1 rounded-md bg-[#0A84FF]/15 text-[#0A84FF] shrink-0">
             <Bot className="w-3.5 h-3.5" />
           </div>
-          <span className="text-[12px] font-semibold tracking-tight text-white/90">
+          <span className="text-[12px] font-semibold tracking-tight text-white/90 truncate">
             Agent Studio
           </span>
 
           {runningCount > 0 ? (
-            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#30D158]/15 text-[#30D158] font-medium border border-[#30D158]/25">
+            <span className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-[#30D158]/15 text-[#30D158] font-medium border border-[#30D158]/25 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-[#30D158] animate-pulse" />
-              {runningCount} Running
+              <span>{runningCount}</span>
             </span>
           ) : (
-            <span className="text-[10px] text-white/45 px-2 py-0.5 rounded-md bg-white/[0.05]">
-              {visibleAgents.length} active
+            <span className="text-[10px] text-white/45 px-1.5 py-0.5 rounded-md bg-white/[0.05] shrink-0">
+              {visibleAgents.length}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           {/* Expand/Collapse All toggle */}
           <button
             title={allCollapsed ? "Expand All Agents" : "Collapse All Agents"}
             onClick={allCollapsed ? handleExpandAll : handleCollapseAll}
-            className="px-2 py-1 rounded-md text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
+            className="px-1.5 py-1 rounded-md text-[10px] sm:text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer whitespace-nowrap"
           >
-            {allCollapsed ? 'Expand All' : 'Collapse All'}
+            {allCollapsed ? 'Expand' : 'Collapse'}
           </button>
 
           {/* Toggle View Mode (Tabs vs Stacked) */}
           <button
             title={viewMode === 'stacked' ? "Switch to Tabbed Agent View" : "Switch to Vertically Stacked View"}
             onClick={() => setViewMode(prev => prev === 'stacked' ? 'tabs' : 'stacked')}
-            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all apple-interactive-subtle cursor-pointer ${
+            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all apple-interactive-subtle cursor-pointer ${
               viewMode === 'tabs' ? 'text-white bg-white/[0.12] shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/[0.08]'
             }`}
           >
@@ -161,7 +161,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
           <button
             title="Add Custom Agent"
             onClick={onOpenAddAgentModal}
-            className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
+            className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -170,7 +170,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
           <button
             title="AI Model & Key Settings"
             onClick={onOpenSettings}
-            className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
+            className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
@@ -180,7 +180,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
             <button
               title="Close Agent Studio Panel"
               onClick={onToggleCollapsePanel}
-              className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer ml-0.5"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer ml-0.5"
             >
               <PanelRightClose className="w-3.5 h-3.5" />
             </button>
@@ -201,7 +201,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
       {/* Active Agents & Closed Agents Reopen Bar */}
       <div className="h-[30px] px-2 flex items-center justify-between border-b border-[#2b2b2b] bg-[#141414] overflow-x-auto no-scrollbar shrink-0 text-xs">
         {/* Visible Agents Tabs/Chips */}
-        <div className="flex items-center gap-1 min-w-0">
+        <div className="flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
           {visibleAgents.map((agent) => {
             const isActive = activeTabAgentId === agent.id;
             return (
@@ -217,7 +217,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                     toggleCollapse(agent.id);
                   }
                 }}
-                className={`px-2 py-0.5 rounded text-[11px] font-normal flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap group ${
+                className={`px-2 py-0.5 rounded text-[11px] font-normal flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap group shrink-0 ${
                   isActive
                     ? 'bg-[#222222] text-white border border-[#333333]'
                     : 'text-[#858585] hover:text-[#cccccc] hover:bg-[#1a1a1a]'
@@ -257,7 +257,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                 key={ca.id}
                 onClick={() => handleReopenAgent(ca.id)}
                 title={`Reopen ${ca.name}`}
-                className="px-1.5 py-0.5 rounded bg-[#1c1c1c] hover:bg-[#252525] border border-[#2a2a2a] text-[10px] text-[#858585] hover:text-[#cccccc] transition-colors flex items-center gap-1"
+                className="px-1.5 py-0.5 rounded bg-[#1c1c1c] hover:bg-[#252525] border border-[#2a2a2a] text-[10px] text-[#858585] hover:text-[#cccccc] transition-colors flex items-center gap-1 shrink-0"
               >
                 <Plus className="w-2.5 h-2.5 text-[#3fb950]" />
                 <span>{ca.name.split(' ')[0]}</span>
@@ -268,7 +268,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
       </div>
 
       {/* Agents Body */}
-      <div ref={containerRef} className="flex-1 flex flex-col relative overflow-hidden bg-[#181818]">
+      <div ref={containerRef} className={`flex-1 flex flex-col relative bg-[#181818] ${viewMode === 'stacked' && !maximizedAgentId ? 'overflow-y-auto' : 'overflow-hidden'}`}>
         {visibleAgents.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center text-[#858585]">
             <Bot className="w-8 h-8 text-[#555555] mb-2" />

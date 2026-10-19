@@ -129,11 +129,24 @@ export const App: React.FC = () => {
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
 
+  // Track global window dimensions for responsive horizontal and vertical scaling
+  const [windowWidth, setWindowWidth] = useState<number>(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const [windowHeight, setWindowHeight] = useState<number>(() => typeof window !== 'undefined' ? window.innerHeight : 800);
+
+  useEffect(() => {
+    const handleWindowResize = () => {
+      setWindowWidth(window.innerWidth);
+      setWindowHeight(window.innerHeight);
+    };
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, []);
+
   // Layout widths & visibility with mouse-drag adjustable state
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('blackhat_sidebar_width');
-      return saved ? Math.max(180, Math.min(650, parseInt(saved, 10))) : 260;
+      return saved ? Math.max(160, Math.min(500, parseInt(saved, 10))) : 260;
     } catch {
       return 260;
     }
@@ -142,14 +155,29 @@ export const App: React.FC = () => {
   const [agentWindowWidth, setAgentWindowWidth] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('blackhat_agent_width');
-      return saved ? Math.max(280, Math.min(850, parseInt(saved, 10))) : 420;
+      return saved ? Math.max(260, Math.min(700, parseInt(saved, 10))) : 400;
     } catch {
-      return 420;
+      return 400;
     }
   });
 
   const [isSidebarVisible, setIsSidebarVisible] = useState<boolean>(true);
   const [isAgentWindowVisible, setIsAgentWindowVisible] = useState<boolean>(true);
+
+  // Dynamic responsive horizontal bounds based on current window width
+  const minEditorWidth = 280;
+  const activityBarWidth = 52;
+  const availableSpaceForPanels = Math.max(420, windowWidth - activityBarWidth - minEditorWidth);
+
+  // Calculate max allowed widths ensuring editor is never starved
+  const maxAllowedSidebarWidth = Math.max(160, Math.min(480, Math.floor(availableSpaceForPanels * 0.45)));
+  const effectiveSidebarWidth = isSidebarVisible ? Math.max(160, Math.min(sidebarWidth, maxAllowedSidebarWidth)) : 0;
+
+  const maxAllowedAgentWidth = Math.max(
+    260,
+    Math.min(700, isSidebarVisible ? Math.max(260, availableSpaceForPanels - effectiveSidebarWidth) : availableSpaceForPanels)
+  );
+  const effectiveAgentWidth = isAgentWindowVisible ? Math.max(260, Math.min(agentWindowWidth, maxAllowedAgentWidth)) : 0;
 
   // Mouse resizing refs
   const isDraggingLeftRef = useRef(false);
@@ -163,8 +191,8 @@ export const App: React.FC = () => {
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingLeftRef.current) return;
-      // ActivityBar is 48px wide
-      const newWidth = Math.max(180, Math.min(650, moveEvent.clientX - 48));
+      // ActivityBar is 52px wide
+      const newWidth = Math.max(160, Math.min(maxAllowedSidebarWidth, moveEvent.clientX - 52));
       setSidebarWidth(newWidth);
     };
 
@@ -192,7 +220,7 @@ export const App: React.FC = () => {
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingRightRef.current) return;
-      const newWidth = Math.max(280, Math.min(850, window.innerWidth - moveEvent.clientX));
+      const newWidth = Math.max(260, Math.min(maxAllowedAgentWidth, window.innerWidth - moveEvent.clientX));
       setAgentWindowWidth(newWidth);
     };
 
@@ -1598,7 +1626,7 @@ export const App: React.FC = () => {
 
         {/* Left Sidebar Views (Explorer, Search, Source Control, Run & Debug, Extensions) */}
         {isSidebarVisible && (
-          <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden bg-[#16181e]/95 backdrop-blur-2xl border-r border-white/[0.08]">
+          <div style={{ width: `${effectiveSidebarWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden bg-[#16181e]/95 backdrop-blur-2xl border-r border-white/[0.08]">
             {activeView === 'explorer' && (
               <FileTree
                 files={fileTree}
@@ -1655,7 +1683,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Center Editor Area + Terminal */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-[280px] bg-[#1e1e1e] overflow-hidden">
           {/* Tab Bar */}
           <EditorTabs
             tabs={tabs}
@@ -1696,7 +1724,7 @@ export const App: React.FC = () => {
 
         {/* Right Multi-Agent Window (Architect, Developer, Tester, etc.) */}
         {isAgentWindowVisible && (
-          <div style={{ width: `${agentWindowWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden">
+          <div style={{ width: `${effectiveAgentWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden">
             <AgentWindowContainer
               agents={agents}
               settings={settings}

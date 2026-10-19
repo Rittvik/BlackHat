@@ -319,30 +319,30 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
   return (
     <div className="w-full h-full flex flex-col bg-[#181818] border-r border-[#2b2b2b] select-none overflow-hidden font-sans text-xs">
       {/* Header */}
-      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0">
+      <div className="h-[35px] px-2.5 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0 gap-1 overflow-hidden">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase">
+          <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase truncate min-w-0">
             Extensions
           </span>
-          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#0078d4]/15 text-[#58a6ff] border border-[#0078d4]/30 font-medium">
+          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#0078d4]/15 text-[#58a6ff] border border-[#0078d4]/30 font-medium shrink-0">
             Open VSX
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-[11px]">
+        <div className="flex items-center gap-0.5 text-[10px] shrink-0">
           <button
             onClick={() => setTab('marketplace')}
-            className={`px-2 py-0.5 rounded transition-colors ${
+            className={`px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
               tab === 'marketplace'
                 ? 'bg-[#252525] text-white font-medium'
                 : 'text-[#858585] hover:text-[#cccccc]'
             }`}
           >
-            Marketplace
+            Market
           </button>
           <button
             onClick={() => setTab('installed')}
-            className={`px-2 py-0.5 rounded transition-colors ${
+            className={`px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
               tab === 'installed'
                 ? 'bg-[#252525] text-white font-medium'
                 : 'text-[#858585] hover:text-[#cccccc]'

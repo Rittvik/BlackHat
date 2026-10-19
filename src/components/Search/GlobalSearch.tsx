@@ -62,8 +62,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase,
   return (
     <div className="w-full h-full flex flex-col bg-[#181818] border-r border-[#2b2b2b] select-none text-xs font-sans">
       {/* Header */}
-      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0">
-        <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase">
+      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0 gap-1 overflow-hidden">
+        <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase truncate min-w-0">
           Search
         </span>
         <button
@@ -73,7 +73,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase,
             setSearched(false);
           }}
           title="Clear Search"
-          className="p-1 hover:text-white text-[#858585] rounded hover:bg-[#252525] transition-colors"
+          className="p-1 hover:text-white text-[#858585] rounded hover:bg-[#252525] transition-colors shrink-0"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -87,9 +87,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase,
             placeholder="Search files..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full px-2.5 py-1.5 bg-transparent text-xs text-white placeholder-[#666666] focus:outline-none"
+            className="w-full min-w-0 px-2.5 py-1.5 bg-transparent text-xs text-white placeholder-[#666666] focus:outline-none"
           />
-          <div className="flex items-center pr-1 gap-0.5">
+          <div className="flex items-center pr-1 gap-0.5 shrink-0">
             <button
               type="button"
               onClick={() => setCaseSensitive(prev => !prev)}

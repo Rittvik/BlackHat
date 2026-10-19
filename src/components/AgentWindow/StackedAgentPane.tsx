@@ -162,16 +162,16 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
 
   return (
     <div className={`w-full flex flex-col bg-[#181818] select-text relative overflow-hidden transition-all ${
-      isCollapsed ? 'h-[36px] shrink-0' : 'h-full flex-1'
+      isCollapsed ? 'h-[36px] shrink-0' : isMaximized ? 'h-full flex-1' : 'min-h-[260px] flex-1 shrink-0'
     }`}>
       {/* Agent Header */}
       <div 
         onClick={onToggleCollapse}
-        className="h-[36px] px-2.5 flex items-center justify-between bg-[#181818] hover:bg-[#1d1d1d] border-b border-[#2b2b2b] select-none shrink-0 cursor-pointer transition-colors"
+        className="h-[36px] px-2 sm:px-2.5 flex items-center justify-between bg-[#181818] hover:bg-[#1d1d1d] border-b border-[#2b2b2b] select-none shrink-0 cursor-pointer transition-colors gap-1 overflow-hidden"
       >
         <div className="flex items-center gap-1.5 min-w-0">
           {onToggleCollapse && (
-            <span className="text-[#858585] p-0.5">
+            <span className="text-[#858585] p-0.5 shrink-0">
               {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </span>
           )}
@@ -181,13 +181,13 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
           {getRoleBadge(agent.role)}
           {getStatusBadge()}
           {isCollapsed && agent.messages.length > 0 && (
-            <span className="text-[10px] text-[#666666] font-mono">
-              ({agent.messages.length} msgs)
+            <span className="text-[10px] text-[#666666] font-mono shrink-0">
+              ({agent.messages.length})
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
           {!isCollapsed && (
             <>
               {/* Model Selector */}
@@ -197,7 +197,7 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                   const [prov, mod] = e.target.value.split(':');
                   onSelectModel(mod, prov);
                 }}
-                className="text-[10px] bg-[#222222] border border-[#2b2b2b] text-[#cccccc] rounded px-1.5 py-0.5 focus:outline-none hover:border-[#383838] cursor-pointer"
+                className="text-[10px] bg-[#222222] border border-[#2b2b2b] text-[#cccccc] rounded px-1.5 py-0.5 focus:outline-none hover:border-[#383838] cursor-pointer max-w-[105px] sm:max-w-[140px] truncate"
               >
                 <optgroup label="✨ Free Tier Models (No Subscription Required)">
                   <option value="free:gemini-flash">Google Gemini 2.5 Flash [Free Tier]</option>
@@ -495,14 +495,14 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                 className="w-full bg-transparent text-xs text-white placeholder-[#858585] focus:outline-none resize-none leading-relaxed"
               />
 
-              <div className="flex items-center justify-between pt-1 border-t border-[#2a2a2a] mt-1 text-[11px]">
-                <span className="text-[10px] text-[#858585]">
+              <div className="flex items-center justify-between pt-1 border-t border-[#2a2a2a] mt-1 text-[11px] gap-1">
+                <span className="text-[10px] text-[#858585] truncate min-w-0">
                   Enter to send, Shift+Enter for newline
                 </span>
                 <button
                   onClick={() => onSendMessage()}
                   disabled={!agent.input.trim() || agent.status !== 'idle'}
-                  className="w-6 h-6 rounded flex items-center justify-center bg-[#0078d4] hover:bg-[#026ec1] disabled:opacity-30 text-white transition-colors"
+                  className="w-6 h-6 rounded flex items-center justify-center bg-[#0078d4] hover:bg-[#026ec1] disabled:opacity-30 text-white transition-colors shrink-0"
                 >
                   <ArrowUp className="w-3.5 h-3.5" />
                 </button>

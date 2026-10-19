@@ -298,27 +298,27 @@ export const FileTree: React.FC<FileTreeProps> = ({
       onContextMenu={(e) => handleContextMenu(e, null)}
     >
       {/* Explorer Header */}
-      <div className="h-[35px] px-4 flex items-center justify-between border-b border-[#2b2b2b] text-[11px] font-semibold text-[#bbbbbb] tracking-wider uppercase shrink-0">
-        <span>Explorer</span>
-        <div className="flex items-center gap-1">
+      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] text-[11px] font-semibold text-[#bbbbbb] tracking-wider uppercase shrink-0 gap-1 overflow-hidden">
+        <span className="truncate min-w-0">Explorer</span>
+        <div className="flex items-center gap-0.5 shrink-0">
           <button 
             title="New File"
             onClick={() => setNewPromptPath({ parentPath: '', isDir: false })}
-            className="p-1 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors text-[#858585]"
+            className="p-1 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors text-[#858585] shrink-0"
           >
             <FilePlus className="w-3.5 h-3.5" />
           </button>
           <button 
             title="New Folder"
             onClick={() => setNewPromptPath({ parentPath: '', isDir: true })}
-            className="p-1 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors text-[#858585]"
+            className="p-1 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors text-[#858585] shrink-0"
           >
             <FolderPlus className="w-3.5 h-3.5" />
           </button>
           <button 
             title="Refresh Explorer"
             onClick={onRefresh}
-            className="p-1 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors text-[#858585]"
+            className="p-1 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors text-[#858585] shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>

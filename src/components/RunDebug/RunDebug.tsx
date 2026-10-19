@@ -82,14 +82,14 @@ export const RunDebug: React.FC<RunDebugProps> = ({ onRunCommand, onOpenTerminal
   return (
     <div className="w-full h-full flex flex-col bg-[#181818] border-r border-[#2b2b2b] select-none text-xs font-sans">
       {/* Header */}
-      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0">
-        <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase">
+      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0 gap-1 overflow-hidden">
+        <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase truncate min-w-0">
           Run and Debug
         </span>
         <button
           onClick={onOpenTerminal}
           title="Open Integrated Terminal"
-          className="p-1 hover:text-white text-[#858585] rounded hover:bg-[#252525] transition-colors"
+          className="p-1 hover:text-white text-[#858585] rounded hover:bg-[#252525] transition-colors shrink-0"
         >
           <TerminalIcon className="w-3.5 h-3.5" />
         </button>
@@ -97,12 +97,12 @@ export const RunDebug: React.FC<RunDebugProps> = ({ onRunCommand, onOpenTerminal
 
       {/* Configuration Selector & Launch Controls */}
       <div className="p-3 border-b border-[#2b2b2b] space-y-2 shrink-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           {/* Config dropdown */}
           <select
             value={selectedConfigId}
             onChange={(e) => setSelectedConfigId(e.target.value)}
-            className="flex-1 bg-[#141414] border border-[#2b2b2b] text-[#cccccc] rounded px-2.5 py-1 text-xs focus:outline-none focus:border-[#0078d4] cursor-pointer"
+            className="flex-1 min-w-0 bg-[#141414] border border-[#2b2b2b] text-[#cccccc] rounded px-2 py-1 text-xs focus:outline-none focus:border-[#0078d4] cursor-pointer truncate"
           >
             {CONFIGURATIONS.map(c => (
               <option key={c.id} value={c.id}>

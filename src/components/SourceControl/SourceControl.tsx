@@ -100,19 +100,19 @@ export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBas
   return (
     <div className="w-full h-full flex flex-col bg-[#181818] border-r border-[#2b2b2b] select-none text-xs font-sans">
       {/* Header */}
-      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0">
+      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0 gap-1 overflow-hidden">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase">
+          <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase truncate min-w-0">
             Source Control
           </span>
-          <span className="flex items-center gap-1 text-[10px] text-[#858585] truncate font-mono">
+          <span className="flex items-center gap-1 text-[10px] text-[#858585] truncate font-mono shrink-0">
             (<GitBranch className="w-3 h-3 text-[#58a6ff]" /> {branch})
           </span>
         </div>
         <button
           onClick={fetchStatus}
           title="Refresh Git Status"
-          className="p-1 hover:text-white text-[#858585] rounded hover:bg-[#252525] transition-colors"
+          className="p-1 hover:text-white text-[#858585] rounded hover:bg-[#252525] transition-colors shrink-0"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>

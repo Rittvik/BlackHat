@@ -672,7 +672,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {/* Inputs */}
               <div className="w-full space-y-3 text-left mb-5">
                 <div>
-                  <label className="block text-[11px] font-medium text-[#cccccc] mb-1 flex items-center gap-1.5">
+                  <label className="text-[11px] font-medium text-[#cccccc] mb-1 flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-[#0078d4]" />
                     <span>Email Address *</span>
                   </label>
@@ -688,7 +688,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-[#cccccc] mb-1 flex items-center gap-1.5">
+                  <label className="text-[11px] font-medium text-[#cccccc] mb-1 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-[#858585]" />
                     <span>Full Name</span>
                   </label>

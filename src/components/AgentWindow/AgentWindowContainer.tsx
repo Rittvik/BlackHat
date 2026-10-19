@@ -113,21 +113,24 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
   const allCollapsed = visibleAgents.length > 0 && visibleAgents.every(a => collapsedMap[a.id]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#181818] border-l border-[#2b2b2b] select-none overflow-hidden font-sans">
-      {/* Top Header */}
-      <div className="h-[35px] px-3 flex items-center justify-between border-b border-[#2b2b2b] bg-[#181818] shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[11px] font-semibold tracking-wider text-[#bbbbbb] uppercase">
+    <div className="w-full h-full flex flex-col bg-[#14151a]/95 backdrop-blur-2xl border-l border-white/[0.08] select-none overflow-hidden font-sans">
+      {/* Apple macOS Pro Agent Studio Header */}
+      <div className="h-[38px] px-3.5 flex items-center justify-between border-b border-white/[0.08] apple-glass shrink-0 apple-specular-top">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1 rounded-md bg-[#0A84FF]/15 text-[#0A84FF]">
+            <Bot className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[12px] font-semibold tracking-tight text-white/90">
             Agent Studio
           </span>
 
           {runningCount > 0 ? (
-            <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] bg-[#2ea043]/15 text-[#3fb950] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2ea043] animate-pulse" />
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#30D158]/15 text-[#30D158] font-medium border border-[#30D158]/25">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#30D158] animate-pulse" />
               {runningCount} Running
             </span>
           ) : (
-            <span className="text-[10px] text-[#858585] font-normal">
+            <span className="text-[10px] text-white/45 px-2 py-0.5 rounded-md bg-white/[0.05]">
               {visibleAgents.length} active
             </span>
           )}
@@ -138,7 +141,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
           <button
             title={allCollapsed ? "Expand All Agents" : "Collapse All Agents"}
             onClick={allCollapsed ? handleExpandAll : handleCollapseAll}
-            className="px-1.5 py-0.5 rounded text-[10px] text-[#858585] hover:text-[#cccccc] hover:bg-[#252525] transition-colors"
+            className="px-2 py-1 rounded-md text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
           >
             {allCollapsed ? 'Expand All' : 'Collapse All'}
           </button>
@@ -147,8 +150,8 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
           <button
             title={viewMode === 'stacked' ? "Switch to Tabbed Agent View" : "Switch to Vertically Stacked View"}
             onClick={() => setViewMode(prev => prev === 'stacked' ? 'tabs' : 'stacked')}
-            className={`p-1 rounded transition-colors ${
-              viewMode === 'tabs' ? 'text-white bg-[#282828]' : 'text-[#858585] hover:text-white hover:bg-[#252525]'
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all apple-interactive-subtle cursor-pointer ${
+              viewMode === 'tabs' ? 'text-white bg-white/[0.12] shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/[0.08]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -158,7 +161,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
           <button
             title="Add Custom Agent"
             onClick={onOpenAddAgentModal}
-            className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors flex items-center gap-0.5"
+            className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -167,7 +170,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
           <button
             title="AI Model & Key Settings"
             onClick={onOpenSettings}
-            className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
@@ -177,7 +180,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
             <button
               title="Close Agent Studio Panel"
               onClick={onToggleCollapsePanel}
-              className="p-1 hover:text-white text-[#858585] hover:bg-[#252525] rounded transition-colors ml-0.5"
+              className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-white text-white/50 hover:bg-white/[0.08] transition-all apple-interactive-subtle cursor-pointer ml-0.5"
             >
               <PanelRightClose className="w-3.5 h-3.5" />
             </button>

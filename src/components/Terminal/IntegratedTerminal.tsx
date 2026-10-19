@@ -453,8 +453,8 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
 
   return (
     <div 
-      className={`flex flex-col bg-[#141414] border-t border-[#2b2b2b] select-none relative transition-all duration-150 ${
-        isOpen ? '' : 'h-[32px] shrink-0'
+      className={`flex flex-col bg-[#14151a]/95 backdrop-blur-2xl border-t border-white/[0.08] select-none relative transition-all duration-150 ${
+        isOpen ? '' : 'h-[34px] shrink-0'
       }`}
       style={isOpen ? { height: `${panelHeight}px` } : undefined}
     >
@@ -463,25 +463,25 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
         <div
           onMouseDown={handleStartResize}
           title="Drag to resize bottom panel"
-          className="absolute top-0 left-0 right-0 h-[4px] -mt-[2px] cursor-row-resize hover:bg-[#0078d4] active:bg-[#0078d4] z-30 transition-colors"
+          className="absolute top-0 left-0 right-0 h-[4px] -mt-[2px] cursor-row-resize hover:bg-[#0A84FF] active:bg-[#0A84FF] z-30 transition-colors"
         />
       )}
 
-      {/* Panel Tab Header Bar */}
-      <div className="h-[32px] px-2 flex items-center justify-between bg-[#181818] border-b border-[#282828] shrink-0 text-xs text-[#858585]">
-        {/* Left Side: Standard VSCode/Antigravity Bottom Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar h-full">
+      {/* Apple macOS Pro Panel Tab Header Bar */}
+      <div className="h-[34px] px-2.5 flex items-center justify-between apple-glass border-b border-white/[0.08] shrink-0 text-xs apple-specular-top">
+        {/* Left Side: Apple Segmented Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar h-full py-1">
           {/* PROBLEMS Tab */}
           <button
             onClick={() => handleTabClick('problems')}
-            className={`h-full px-2.5 flex items-center gap-1.5 text-[11px] font-medium transition-colors border-b-2 cursor-pointer ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
               isOpen && activeTab === 'problems'
-                ? 'border-[#0078d4] text-white bg-[#1e1e1e]'
-                : 'border-transparent text-[#858585] hover:text-[#cccccc] hover:bg-[#1c1c1c]'
+                ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
+                : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
             }`}
           >
             <span>PROBLEMS</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-[#252525] text-[#858585] font-mono">
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-white/[0.08] text-white/60 font-mono">
               0
             </span>
           </button>
@@ -489,10 +489,10 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* OUTPUT Tab */}
           <button
             onClick={() => handleTabClick('output')}
-            className={`h-full px-2.5 flex items-center gap-1.5 text-[11px] font-medium transition-colors border-b-2 cursor-pointer ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
               isOpen && activeTab === 'output'
-                ? 'border-[#0078d4] text-white bg-[#1e1e1e]'
-                : 'border-transparent text-[#858585] hover:text-[#cccccc] hover:bg-[#1c1c1c]'
+                ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
+                : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
             }`}
           >
             <span>OUTPUT</span>
@@ -501,10 +501,10 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* DEBUG CONSOLE Tab */}
           <button
             onClick={() => handleTabClick('debug')}
-            className={`h-full px-2.5 flex items-center gap-1.5 text-[11px] font-medium transition-colors border-b-2 cursor-pointer ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
               isOpen && activeTab === 'debug'
-                ? 'border-[#0078d4] text-white bg-[#1e1e1e]'
-                : 'border-transparent text-[#858585] hover:text-[#cccccc] hover:bg-[#1c1c1c]'
+                ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
+                : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
             }`}
           >
             <span>DEBUG CONSOLE</span>
@@ -513,28 +513,27 @@ export const IntegratedTerminal: React.FC<IntegratedTerminalProps> = ({
           {/* TERMINAL Tab */}
           <button
             onClick={() => handleTabClick('terminal')}
-            className={`h-full px-2.5 flex items-center gap-1.5 text-[11px] font-medium transition-colors border-b-2 cursor-pointer ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
               isOpen && activeTab === 'terminal'
-                ? 'border-[#0078d4] text-white bg-[#1e1e1e]'
-                : 'border-transparent text-[#858585] hover:text-[#cccccc] hover:bg-[#1c1c1c]'
+                ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
+                : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
             }`}
           >
-            <TerminalIcon className="w-3 h-3 text-[#58a6ff]" />
+            <TerminalIcon className="w-3 h-3 text-[#0A84FF]" />
             <span>TERMINAL</span>
           </button>
 
           {/* PORTS Tab */}
           <button
             onClick={() => handleTabClick('ports')}
-            className={`h-full px-2.5 flex items-center gap-1.5 text-[11px] font-medium transition-colors border-b-2 cursor-pointer ${
+            className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-[11px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
               isOpen && activeTab === 'ports'
-                ? 'border-[#0078d4] text-white bg-[#1e1e1e]'
-                : 'border-transparent text-[#858585] hover:text-[#cccccc] hover:bg-[#1c1c1c]'
+                ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.1]'
+                : 'text-white/50 hover:text-white hover:bg-white/[0.06] border border-transparent'
             }`}
           >
-            <Network className="w-3 h-3 text-[#3fb950]" />
+            <Network className="w-3 h-3 text-[#30D158]" />
             <span>PORTS</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950]" />
           </button>
         </div>
 

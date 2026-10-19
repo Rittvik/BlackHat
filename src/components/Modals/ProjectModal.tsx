@@ -199,50 +199,55 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 font-sans select-none animate-fade-in">
-      <div className="w-full max-w-xl bg-[#181818] border border-[#2b2b2b] rounded-xl shadow-2xl overflow-hidden flex flex-col text-[#cccccc]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xl p-4 font-sans select-none animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-xl bg-[#1c1e24]/92 backdrop-blur-2xl border border-white/[0.12] rounded-2xl shadow-[0_24px_70px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.08)] overflow-hidden flex flex-col text-white/90 apple-specular-top">
         
-        {/* Header */}
-        <div className="h-12 px-5 bg-[#1f1f1f] border-b border-[#2b2b2b] flex items-center justify-between shrink-0">
+        {/* Apple macOS Sheet Header */}
+        <div className="h-13 px-5 border-b border-white/[0.08] flex items-center justify-between shrink-0 bg-transparent">
           <div className="flex items-center gap-2.5">
-            <FolderOpen className="w-4 h-4 text-[#00f0ff]" />
-            <h2 className="text-sm font-semibold text-white">Project Manager</h2>
-            <span className="text-xs text-[#666666]">/</span>
-            <span className="text-xs text-[#858585]">{activeTab === 'open' ? 'Open Existing' : 'Create New'}</span>
+            <div className="p-1.5 rounded-lg bg-[#0A84FF]/15 text-[#0A84FF]">
+              <FolderOpen className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-[14px] font-semibold text-white tracking-tight">Project Manager</h2>
+              <div className="text-[11px] text-white/50">{activeTab === 'open' ? 'Open an existing workspace' : 'Create new project template'}</div>
+            </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 rounded hover:bg-[#2c2c2c] text-[#858585] hover:text-white transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full bg-white/[0.06] hover:bg-white/[0.14] text-white/60 hover:text-white flex items-center justify-center transition-all cursor-pointer apple-interactive-subtle"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Tab Bar */}
-        <div className="px-5 pt-3 border-b border-[#2b2b2b] flex items-center gap-4 bg-[#181818]">
-          <button
-            onClick={() => { setActiveTab('open'); setError(null); }}
-            className={`pb-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
-              activeTab === 'open' 
-                ? 'border-[#00f0ff] text-white font-semibold' 
-                : 'border-transparent text-[#858585] hover:text-[#cccccc]'
-            }`}
-          >
-            <FolderOpen className="w-3.5 h-3.5" />
-            <span>Open Existing Project</span>
-          </button>
+        {/* Apple Segmented Tab Switcher */}
+        <div className="px-5 pt-3.5 pb-2 flex items-center justify-center bg-transparent">
+          <div className="apple-segmented-group w-full max-w-md flex justify-center">
+            <button
+              onClick={() => { setActiveTab('open'); setError(null); }}
+              className={`flex-1 py-1.5 px-3 rounded-md text-[12px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer apple-interactive-subtle ${
+                activeTab === 'open' 
+                  ? 'bg-white/[0.14] text-white shadow-sm font-semibold' 
+                  : 'text-white/55 hover:text-white'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>Open Existing Project</span>
+            </button>
 
-          <button
-            onClick={() => { setActiveTab('create'); setError(null); }}
-            className={`pb-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
-              activeTab === 'create' 
-                ? 'border-[#00f0ff] text-white font-semibold' 
-                : 'border-transparent text-[#858585] hover:text-[#cccccc]'
-            }`}
-          >
-            <FolderPlus className="w-3.5 h-3.5" />
-            <span>Create New Project</span>
-          </button>
+            <button
+              onClick={() => { setActiveTab('create'); setError(null); }}
+              className={`flex-1 py-1.5 px-3 rounded-md text-[12px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer apple-interactive-subtle ${
+                activeTab === 'create' 
+                  ? 'bg-white/[0.14] text-white shadow-sm font-semibold' 
+                  : 'text-white/55 hover:text-white'
+              }`}
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span>Create New Project</span>
+            </button>
+          </div>
         </div>
 
         {/* Modal Body */}

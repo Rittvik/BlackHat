@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Circle, ChevronRight, FileCode, FileText } from 'lucide-react';
+import { X, Circle, ChevronRight, FileCode } from 'lucide-react';
 import { EditorTab } from '../../types';
 
 interface EditorTabsProps {
@@ -21,39 +21,35 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
   const pathParts = activeTab ? activeTab.path.split('/').filter(Boolean) : [];
 
   return (
-    <div className="flex flex-col shrink-0 select-none bg-[#181818]">
-      {/* Tabs Row */}
-      <div className="h-[35px] flex items-center bg-[#181818] border-b border-[#2b2b2b] overflow-x-auto">
+    <div className="flex flex-col shrink-0 select-none bg-[#14151a]">
+      {/* Apple Safari / Xcode-style Floating Tab Bar */}
+      <div className="h-[38px] px-2 flex items-center gap-1.5 bg-[#14151a]/90 backdrop-blur-xl border-b border-white/[0.08] overflow-x-auto apple-specular-top">
         {tabs.map((tab, idx) => {
           const isActive = idx === activeTabIndex;
           return (
             <div
               key={tab.path}
               onClick={() => onSelectTab(idx)}
-              className={`group h-full px-3.5 flex items-center gap-2 border-r border-[#2b2b2b] cursor-pointer text-[12px] transition-colors shrink-0 relative ${
+              className={`group h-[28px] px-3 rounded-lg flex items-center gap-2 cursor-pointer text-[12px] font-medium transition-all shrink-0 apple-interactive-subtle ${
                 isActive 
-                  ? 'bg-[#1e1e1e] text-white font-normal' 
-                  : 'bg-[#181818] text-[#969696] hover:bg-[#1e1e1e] hover:text-[#cccccc]'
+                  ? 'bg-white/[0.13] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)] border border-white/[0.12]' 
+                  : 'text-white/50 hover:text-white/90 hover:bg-white/[0.06] border border-transparent'
               }`}
             >
-              {/* Active top line indicator */}
-              {isActive && (
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#0078d4]" />
-              )}
-              
-              <span className="truncate max-w-[160px]">{tab.name}</span>
+              <FileCode className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#0A84FF]' : 'text-white/40'}`} />
+              <span className="truncate max-w-[160px] tracking-tight">{tab.name}</span>
 
               {tab.isDirty ? (
-                <Circle className="w-2 h-2 fill-[#d29922] text-[#d29922] shrink-0" />
+                <Circle className="w-2 h-2 fill-[#FF9F0A] text-[#FF9F0A] shrink-0 ml-0.5" />
               ) : (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onCloseTab(idx);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[rgba(255,255,255,0.12)] text-[#858585] hover:text-white transition-all ml-1"
+                  className="opacity-0 group-hover:opacity-100 w-4 h-4 rounded-full hover:bg-white/[0.16] text-white/50 hover:text-white flex items-center justify-center transition-all ml-1"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-2.5 h-2.5" />
                 </button>
               )}
             </div>
@@ -61,14 +57,14 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
         })}
       </div>
 
-      {/* Breadcrumbs Row */}
+      {/* Apple Subtle Breadcrumbs Row */}
       {activeTab && (
-        <div className="h-[22px] px-3 flex items-center gap-1.5 text-[11px] text-[#858585] bg-[#1e1e1e] border-b border-[#262626]">
-          <span className="hover:text-[#cccccc] cursor-pointer">BlackHat</span>
+        <div className="h-[24px] px-3 flex items-center gap-1.5 text-[11px] text-white/50 bg-[#14151a]/60 border-b border-white/[0.06]">
+          <span className="hover:text-white/80 cursor-pointer transition-colors">BlackHat</span>
           {pathParts.map((part, i) => (
             <React.Fragment key={i}>
-              <ChevronRight className="w-3 h-3 text-[#555555] shrink-0" />
-              <span className={`hover:text-[#cccccc] cursor-pointer ${i === pathParts.length - 1 ? 'text-[#cccccc] font-medium' : ''}`}>
+              <ChevronRight className="w-3 h-3 text-white/30 shrink-0" />
+              <span className={`hover:text-white/90 cursor-pointer transition-colors ${i === pathParts.length - 1 ? 'text-white/90 font-medium' : ''}`}>
                 {part}
               </span>
             </React.Fragment>

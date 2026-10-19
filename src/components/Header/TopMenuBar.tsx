@@ -178,41 +178,41 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
             <button
               onClick={() => handleMenuClick(title)}
               onMouseEnter={() => handleMouseEnter(title)}
-              className={`px-2 py-0.5 rounded text-[11px] font-normal transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md text-[12px] font-medium transition-all cursor-pointer apple-interactive-subtle ${
                 isOpen
-                  ? 'bg-[#282828] text-white'
-                  : 'text-[#858585] hover:text-[#cccccc] hover:bg-[#202020]'
+                  ? 'bg-white/[0.12] text-white shadow-sm'
+                  : 'text-white/60 hover:text-white hover:bg-white/[0.07]'
               }`}
             >
               {title}
             </button>
 
-            {/* Dropdown Menu */}
+            {/* Apple macOS Frosted Glass Dropdown Menu */}
             {isOpen && (
               <div 
-                className="absolute top-full left-0 mt-1 min-w-[220px] bg-[#202020] border border-[#333333] rounded-md shadow-2xl py-1 text-xs text-[#cccccc] font-sans divide-y divide-[#2a2a2a] select-none"
+                className="absolute top-full left-0 mt-1.5 min-w-[230px] bg-[#1c1e24]/90 backdrop-blur-2xl border border-white/[0.12] rounded-xl shadow-[0_20px_48px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)] p-1 text-[12px] text-white/90 select-none z-50 animate-in fade-in zoom-in-95 duration-100"
               >
-                <div className="py-0.5">
+                <div>
                   {items.map((item, idx) => {
                     if (item.separator) {
-                      return <div key={idx} className="h-[1px] bg-[#2a2a2a] my-1" />;
+                      return <div key={idx} className="h-[1px] bg-white/[0.08] my-1 mx-2" />;
                     }
                     return (
                       <button
                         key={idx}
                         onClick={() => handleItemClick(item)}
                         disabled={item.disabled}
-                        className={`w-full px-3 py-1 flex items-center justify-between text-left transition-colors ${
+                        className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-left transition-all apple-interactive-subtle ${
                           item.disabled
-                            ? 'opacity-40 cursor-not-allowed'
+                            ? 'opacity-35 cursor-not-allowed'
                             : item.danger
-                              ? 'hover:bg-[#f85149] hover:text-white text-[#f85149]'
-                              : 'hover:bg-[#0078d4] hover:text-white text-[#cccccc]'
+                              ? 'hover:bg-red-500/20 hover:text-red-400 text-red-400'
+                              : 'hover:bg-[#0A84FF] hover:text-white text-white/90'
                         }`}
                       >
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate font-normal">{item.label}</span>
                         {item.shortcut && (
-                          <span className="text-[10px] text-[#777777] font-mono ml-3 shrink-0">
+                          <span className="text-[10px] text-white/40 group-hover:text-white/80 font-mono ml-3 shrink-0 tracking-wide">
                             {item.shortcut}
                           </span>
                         )}

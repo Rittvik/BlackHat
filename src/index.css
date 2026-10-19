@@ -4,33 +4,181 @@
 
 :root {
   color-scheme: dark;
-  --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --vscode-editor-font: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, 'Courier New', monospace;
-  --vscode-editor-bg: #1e1e1e;
-  --vscode-workbench-bg: #181818;
-  --vscode-border: #2b2b2b;
-  --vscode-accent: #0078d4;
-  --vscode-accent-hover: #026ec1;
-  --vscode-text: #cccccc;
-  --vscode-text-muted: #858585;
+  
+  /* Apple Typography - Optical Sizing & Hierarchy */
+  --apple-font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'SF Pro', system-ui, sans-serif;
+  --apple-font-mono: 'SF Mono', Menlo, Monaco, 'JetBrains Mono', monospace;
+  
+  /* Apple Dynamic Materials & Translucency */
+  --apple-bg: #121316;
+  --apple-material-thick: rgba(20, 22, 27, 0.88);
+  --apple-material-sidebar: rgba(24, 26, 32, 0.78);
+  --apple-material-header: rgba(22, 24, 29, 0.82);
+  --apple-material-panel: rgba(26, 28, 35, 0.75);
+  --apple-material-surface: rgba(255, 255, 255, 0.045);
+  --apple-material-surface-hover: rgba(255, 255, 255, 0.085);
+  --apple-material-surface-active: rgba(255, 255, 255, 0.12);
+  
+  /* Hairline borders & Light-catching specular highlights */
+  --apple-hairline: rgba(255, 255, 255, 0.075);
+  --apple-hairline-bright: rgba(255, 255, 255, 0.14);
+  --apple-hairline-divider: rgba(255, 255, 255, 0.05);
+  
+  /* Apple macOS Accent Colors (System Blue & Pro Gradients) */
+  --apple-accent: #0A84FF;
+  --apple-accent-hover: #0071E3;
+  --apple-accent-gradient: linear-gradient(180deg, #1A8CFF 0%, #0071E3 100%);
+  --apple-accent-glow: 0 0 16px rgba(10, 132, 255, 0.35);
+  
+  /* Apple Vibrant Labels */
+  --apple-label-primary: rgba(255, 255, 255, 0.94);
+  --apple-label-secondary: rgba(255, 255, 255, 0.62);
+  --apple-label-tertiary: rgba(255, 255, 255, 0.40);
+  --apple-label-quaternary: rgba(255, 255, 255, 0.22);
+  
+  /* Apple Fluid Spring Timing */
+  --apple-spring-fast: 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  --apple-spring-smooth: 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  --apple-spring-bounce: 450ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  
+  /* Shadows */
+  --apple-shadow-window: 0 20px 48px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--apple-hairline);
+  --apple-shadow-menu: 0 16px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--apple-hairline-bright);
+  --apple-shadow-popover: 0 24px 60px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--apple-hairline-bright);
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--vscode-font-family);
-  background-color: #181818;
-  color: #cccccc;
+  font-family: var(--apple-font-system);
+  font-optical-sizing: auto;
+  letter-spacing: -0.006em;
+  background-color: var(--apple-bg);
+  color: var(--apple-label-primary);
   overflow: hidden;
   user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* VS Code / Antigravity IDE exact scrollbar */
+/* Apple Fluid Interactive Feedback - instant on pointer-down */
+.apple-interactive {
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background-color 150ms ease, opacity 150ms ease;
+  will-change: transform;
+}
+
+.apple-interactive:active {
+  transform: scale(0.97);
+}
+
+.apple-interactive-subtle:active {
+  transform: scale(0.985);
+}
+
+/* Translucent Glass Layers */
+.apple-glass {
+  background: var(--apple-material-header);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--apple-hairline);
+}
+
+.apple-glass-sidebar {
+  background: var(--apple-material-sidebar);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+}
+
+.apple-glass-panel {
+  background: var(--apple-material-panel);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.apple-glass-card {
+  background: var(--apple-material-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--apple-hairline);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all var(--apple-spring-fast);
+}
+
+.apple-glass-card:hover {
+  background: var(--apple-material-surface-hover);
+  border-color: var(--apple-hairline-bright);
+}
+
+/* macOS Specular Highlights: light catching top edge */
+.apple-specular-top {
+  border-top: 1px solid var(--apple-hairline-bright);
+}
+
+/* Apple Accent Pill Button */
+.apple-btn-accent {
+  background: var(--apple-accent-gradient);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), box-shadow 150ms ease, filter 150ms ease;
+}
+
+.apple-btn-accent:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.apple-btn-accent:active {
+  transform: scale(0.965);
+  filter: brightness(0.95);
+}
+
+/* Apple Segmented Controls */
+.apple-segmented-group {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--apple-hairline);
+  padding: 2px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.apple-segmented-item {
+  border-radius: 6px;
+  transition: all var(--apple-spring-fast);
+}
+
+.apple-segmented-item.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--apple-hairline-bright);
+}
+
+/* Optical Typography Tracking Rules */
+h1, .apple-display-large {
+  font-family: var(--apple-font-system);
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+h2, h3, .apple-title {
+  font-family: var(--apple-font-system);
+  letter-spacing: -0.016em;
+  line-height: 1.25;
+  font-weight: 590;
+}
+
+.apple-caption {
+  font-size: 11px;
+  letter-spacing: 0.008em;
+  color: var(--apple-label-secondary);
+}
+
+/* Apple Native Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -38,14 +186,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(121, 121, 121, 0.35);
-  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
+  transition: background 150ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 100, 100, 0.65);
+  background: rgba(255, 255, 255, 0.35);
   border: 2px solid transparent;
   background-clip: content-box;
 }
@@ -56,27 +205,45 @@ body {
 
 /* Text Selection */
 ::selection {
-  background-color: #264f78;
+  background-color: rgba(10, 132, 255, 0.45);
   color: #ffffff;
 }
 
-/* Monospace font standard */
+/* Monospace standard */
 pre, code, kbd, samp {
-  font-family: var(--vscode-editor-font);
+  font-family: var(--apple-font-mono);
 }
 
-/* Focus outline matching VSCode */
+/* Focus Outline: Apple macOS Blue Glow */
 :focus-visible {
-  outline: 1px solid #0078d4;
-  outline-offset: -1px;
+  outline: none;
+  box-shadow: 0 0 0 2.5px rgba(10, 132, 255, 0.55);
 }
 
-/* Clean minimal pulse */
-@keyframes subtle-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+/* Apple Design Skill §14: Accessibility, Reduced Motion & Transparency */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .apple-interactive, .apple-btn-accent {
+    transform: none !important;
+  }
 }
 
-.animate-subtle-pulse {
-  animation: subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@media (prefers-reduced-transparency: reduce) {
+  .apple-glass, .apple-glass-sidebar, .apple-glass-panel, .apple-glass-card {
+    background: #18191d !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --apple-hairline: rgba(255, 255, 255, 0.28);
+    --apple-hairline-bright: rgba(255, 255, 255, 0.45);
+  }
 }

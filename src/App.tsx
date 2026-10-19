@@ -1339,30 +1339,32 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#181818] text-[#cccccc] overflow-hidden select-none font-sans">
-      {/* Top Application Window Bar with Cross-Platform Support */}
+    <div className="w-screen h-screen flex flex-col bg-[#121316] text-white/90 overflow-hidden select-none font-sans">
+      {/* Top Application Window Bar with Apple macOS Pro Materials */}
       <div 
         style={{ WebkitAppRegion: 'drag' } as any}
-        className={`h-[36px] px-3 flex items-center justify-between bg-[#181818] border-b border-[#2b2b2b] shrink-0 ${
-          isElectron && platform === 'darwin' ? 'pl-[78px]' : ''
+        className={`h-[42px] px-3.5 flex items-center justify-between apple-glass border-b border-white/[0.08] apple-specular-top shrink-0 relative z-30 ${
+          isElectron && platform === 'darwin' ? 'pl-[84px]' : ''
         }`}
       >
         {/* Left Section: Branding & Menu Bar */}
-        <div className="flex items-center gap-2.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          <span className="text-[12px] font-medium text-white flex items-center gap-1.5">
-            <AppLogo size={18} className="w-[18px] h-[18px] shrink-0 rounded" />
-            <span>BlackHat</span>
+        <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <span className="text-[13px] font-semibold text-white flex items-center gap-2 tracking-tight">
+            <AppLogo size={20} className="w-5 h-5 shrink-0 rounded-md shadow-sm" />
+            <span className="bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+              BlackHat
+            </span>
             {workspaceRoot && (
-              <span className="text-[11px] font-normal text-[#888888] flex items-center gap-1">
+              <span className="text-[11px] font-medium text-white/40 flex items-center gap-1.5 ml-0.5">
                 <span>/</span>
-                <span className="text-[#cccccc] font-medium truncate max-w-[140px]">
+                <span className="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] text-white/80 font-mono truncate max-w-[150px]">
                   {workspaceRoot.split(/[/\\]/).filter(Boolean).pop()}
                 </span>
               </span>
             )}
           </span>
 
-          {/* Antigravity / VS Code-style Application Menu Bar */}
+          {/* Apple macOS Pro Application Menu Bar */}
           <TopMenuBar
             onNewFile={() => handleCreateFile('untitled.ts', false)}
             onNewFolder={() => handleCreateFile('new_folder', true)}
@@ -1388,39 +1390,39 @@ export const App: React.FC = () => {
           />
         </div>
 
-        {/* Center Search / Command Trigger */}
+        {/* Center Search / Spotlight Command Trigger */}
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
           style={{ WebkitAppRegion: 'no-drag' } as any}
-          className="w-[380px] max-w-[40vw] h-[26px] rounded bg-[#222222] hover:bg-[#282828] border border-[#2e2e2e] text-[12px] text-[#858585] flex items-center justify-between px-3 transition-colors cursor-pointer"
+          className="w-[390px] max-w-[38vw] h-[28px] rounded-xl bg-white/[0.06] hover:bg-white/[0.09] active:scale-[0.99] border border-white/[0.1] text-[12px] text-white/55 flex items-center justify-between px-3 transition-all cursor-pointer apple-interactive-subtle shadow-inner"
         >
           <div className="flex items-center gap-2 truncate">
-            <Search className="w-3.5 h-3.5 text-[#858585]" />
-            <span className="truncate">BlackHat - Search files, symbols & commands...</span>
+            <Search className="w-3.5 h-3.5 text-white/50" />
+            <span className="truncate tracking-tight font-normal">Spotlight — files, symbols & commands</span>
           </div>
-          <kbd className="px-1.5 py-0.2 rounded bg-[#181818] border border-[#333333] text-[10px] font-mono text-[#858585]">
+          <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.09] border border-white/[0.1] text-[10px] font-mono text-white/70 tracking-wider">
             ⌘P
           </kbd>
         </button>
 
-        {/* Right Section: Multi-Agent Launcher, Layout Toggles & Account */}
-        <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          {/* Run All Agents */}
+        {/* Right Section: Multi-Agent Launcher, Layout Segmented Toggles & Account */}
+        <div className="flex items-center gap-2.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {/* Run All Agents: Apple macOS Accent Button */}
           <button
             onClick={handleRunAllThreeAgentsConcurrently}
-            className="px-2.5 py-1 rounded bg-[#0078d4] hover:bg-[#026ec1] text-white text-[11px] font-normal flex items-center gap-1.5 transition-colors shadow-sm"
+            className="apple-btn-accent px-3 py-1 rounded-lg text-white text-[11px] font-medium flex items-center gap-1.5 cursor-pointer"
             title="Dispatch Architect, Developer, and Tester simultaneously"
           >
             <span>⚡ Run All Agents</span>
           </button>
 
-          {/* Layout Toggles */}
-          <div className="flex items-center border-l border-[#2e2e2e] pl-1.5 ml-0.5 gap-0.5">
+          {/* Apple Segmented Layout Controls */}
+          <div className="apple-segmented-group">
             <button
               onClick={() => setIsSidebarVisible(prev => !prev)}
               title={isSidebarVisible ? "Hide Primary SideBar" : "Show Primary SideBar"}
-              className={`p-1.5 rounded hover:bg-[#252525] transition-colors ${
-                isSidebarVisible ? 'text-white' : 'text-[#666666]'
+              className={`p-1.5 apple-segmented-item cursor-pointer ${
+                isSidebarVisible ? 'active' : 'text-white/50 hover:text-white'
               }`}
             >
               <PanelLeft className="w-3.5 h-3.5" />
@@ -1429,8 +1431,8 @@ export const App: React.FC = () => {
             <button
               onClick={() => setIsTerminalOpen(prev => !prev)}
               title={isTerminalOpen ? "Hide Terminal Panel" : "Show Terminal Panel"}
-              className={`p-1.5 rounded hover:bg-[#252525] transition-colors ${
-                isTerminalOpen ? 'text-white' : 'text-[#666666]'
+              className={`p-1.5 apple-segmented-item cursor-pointer ${
+                isTerminalOpen ? 'active' : 'text-white/50 hover:text-white'
               }`}
             >
               <TerminalIcon className="w-3.5 h-3.5" />
@@ -1439,45 +1441,45 @@ export const App: React.FC = () => {
             <button
               onClick={() => setIsAgentWindowVisible(prev => !prev)}
               title={isAgentWindowVisible ? "Hide Agent Studio" : "Show Agent Studio"}
-              className={`p-1.5 rounded hover:bg-[#252525] transition-colors ${
-                isAgentWindowVisible ? 'text-white' : 'text-[#666666]'
+              className={`p-1.5 apple-segmented-item cursor-pointer ${
+                isAgentWindowVisible ? 'active' : 'text-white/50 hover:text-white'
               }`}
             >
               <PanelRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* User Account Button */}
+          {/* User Account / Profile Button */}
           <button
             onClick={() => setIsAccountModalOpen(true)}
-            className="px-2 py-1 rounded hover:bg-[#252525] border border-[#2e2e2e] text-xs flex items-center gap-1.5 text-[#cccccc] transition-colors"
+            className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] text-xs flex items-center gap-1.5 text-white/80 transition-all cursor-pointer apple-interactive-subtle"
           >
             {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-4 h-4 rounded-full object-cover" />
+              <img src={user.avatar} alt={user.name} className="w-4 h-4 rounded-full object-cover shadow-sm" />
             ) : null}
-            <span className="text-[11px] font-normal">{user.isLoggedIn ? user.name : 'Sign In'}</span>
+            <span className="text-[11px] font-medium">{user.isLoggedIn ? user.name : 'Sign In'}</span>
           </button>
 
           {/* Windows native window controls in Electron */}
           {isElectron && platform === 'win32' && (
-            <div className="flex items-center ml-2 border-l border-[#2b2b2b] pl-2">
+            <div className="flex items-center ml-2 border-l border-white/[0.08] pl-2">
               <button 
                 onClick={() => (window as any).electronAPI.minimize()}
-                className="w-8 h-7 flex items-center justify-center hover:bg-[#252525] text-[#858585] hover:text-white text-xs"
+                className="w-8 h-7 flex items-center justify-center hover:bg-white/[0.08] text-white/60 hover:text-white text-xs rounded"
                 title="Minimize"
               >
                 &#8212;
               </button>
               <button 
                 onClick={() => (window as any).electronAPI.maximize()}
-                className="w-8 h-7 flex items-center justify-center hover:bg-[#252525] text-[#858585] hover:text-white text-xs"
+                className="w-8 h-7 flex items-center justify-center hover:bg-white/[0.08] text-white/60 hover:text-white text-xs rounded"
                 title="Maximize"
               >
                 &#9633;
               </button>
               <button 
                 onClick={() => (window as any).electronAPI.close()}
-                className="w-8 h-7 flex items-center justify-center hover:bg-[#f85149] text-[#858585] hover:text-white text-xs"
+                className="w-8 h-7 flex items-center justify-center hover:bg-red-500 text-white/60 hover:text-white text-xs rounded"
                 title="Close"
               >
                 &#10005;
@@ -1505,7 +1507,7 @@ export const App: React.FC = () => {
 
         {/* Left Sidebar Views (Explorer, Search, Source Control, Run & Debug, Extensions) */}
         {isSidebarVisible && (
-          <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden bg-[#181818]">
+          <div style={{ width: `${sidebarWidth}px` }} className="h-full shrink-0 flex flex-col overflow-hidden bg-[#16181e]/95 backdrop-blur-2xl border-r border-white/[0.08]">
             {activeView === 'explorer' && (
               <FileTree
                 files={fileTree}

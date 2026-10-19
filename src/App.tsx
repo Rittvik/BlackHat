@@ -14,6 +14,7 @@ import { SettingsModal } from './components/Modals/SettingsModal';
 import { AccountModal } from './components/Modals/AccountModal';
 import { AddAgentModal } from './components/Modals/AddAgentModal';
 import { CommandPalette } from './components/Modals/CommandPalette';
+import { ProjectModal } from './components/Modals/ProjectModal';
 import { LoginScreen } from './components/Auth/LoginScreen';
 import { TopMenuBar } from './components/Header/TopMenuBar';
 import { AppLogo } from './components/Common/AppLogo';
@@ -311,10 +312,28 @@ export const App: React.FC = () => {
     ? 'http://localhost:3001' 
     : '';
 
-  // Load file tree on startup
-  const loadFiles = async () => {
+  // Workspace & Multi-Window Project Management
+  const [workspaceRoot, setWorkspaceRoot] = useState<string>(() => {
     try {
-      const res = await fetch(`${API_BASE}/api/files`);
+      const param = new URLSearchParams(window.location.search).get('workspace');
+      return param || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [projectModalTab, setProjectModalTab] = useState<'open' | 'create'>('open');
+
+  // Load file tree with dynamic workspace header support
+  const loadFiles = async (overrideWorkspace?: string) => {
+    try {
+      const target = overrideWorkspace !== undefined ? overrideWorkspace : workspaceRoot;
+      const headers: Record<string, string> = {};
+      if (target) headers['x-workspace-root'] = target;
+      const url = target 
+        ? `${API_BASE}/api/files?workspace=${encodeURIComponent(target)}` 
+        : `${API_BASE}/api/files`;
+      const res = await fetch(url, { headers });
       const data = await res.json();
       if (data.success && data.tree) {
         setFileTree(data.tree);
@@ -324,8 +343,96 @@ export const App: React.FC = () => {
     }
   };
 
+  // Synchronize workspace info on mount & update title / terminal
   useEffect(() => {
-    loadFiles();
+    if (!workspaceRoot) {
+      fetch(`${API_BASE}/api/workspace/info`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.workspaceRoot) {
+            setWorkspaceRoot(data.workspaceRoot);
+            setTerminalCwd(data.workspaceRoot);
+            const folderName = data.workspaceName || data.workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
+            document.title = `${folderName} - BlackHat`;
+            loadFiles(data.workspaceRoot);
+          }
+        })
+        .catch(err => console.error('Failed to load workspace info:', err));
+    } else {
+      const folderName = workspaceRoot.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
+      document.title = `${folderName} - BlackHat`;
+      setTerminalCwd(workspaceRoot);
+      loadFiles(workspaceRoot);
+    }
+  }, [workspaceRoot]);
+
+  // Project Open / Switch Handler
+  const handleOpenWorkspace = (targetPath: string, newWindow?: boolean) => {
+    if (!targetPath) return;
+
+    if (newWindow) {
+      if ((window as any).electronAPI?.createNewWindow) {
+        (window as any).electronAPI.createNewWindow(targetPath);
+      } else {
+        window.open(`/?workspace=${encodeURIComponent(targetPath)}`, '_blank');
+      }
+      return;
+    }
+
+    // Switch workspace in the current window
+    setWorkspaceRoot(targetPath);
+    setTerminalCwd(targetPath);
+    const folderName = targetPath.split(/[/\\]/).filter(Boolean).pop() || 'BlackHat';
+    document.title = `${folderName} - BlackHat`;
+    setTabs([]);
+    setActiveTabIndex(-1);
+    loadFiles(targetPath);
+    setIsProjectModalOpen(false);
+  };
+
+  // Open Native System Folder Picker or Fallback Modal
+  const handleOpenProjectFolder = async () => {
+    if ((window as any).electronAPI?.openFolderDialog) {
+      try {
+        const res = await (window as any).electronAPI.openFolderDialog();
+        if (!res.canceled && res.folderPath) {
+          handleOpenWorkspace(res.folderPath, false);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to open native folder dialog:', e);
+      }
+    }
+    setProjectModalTab('open');
+    setIsProjectModalOpen(true);
+  };
+
+  // Spawn a brand new independent window
+  const handleNewWindow = () => {
+    if ((window as any).electronAPI?.createNewWindow) {
+      (window as any).electronAPI.createNewWindow();
+    } else {
+      window.open(window.location.origin, '_blank');
+    }
+  };
+
+  // Native Electron Listeners for Open Project and Initial Workspace
+  useEffect(() => {
+    if ((window as any).electronAPI?.onOpenProjectFolder) {
+      const cleanup = (window as any).electronAPI.onOpenProjectFolder((folderPath: string) => {
+        handleOpenWorkspace(folderPath, false);
+      });
+      return () => { if (typeof cleanup === 'function') cleanup(); };
+    }
+  }, []);
+
+  useEffect(() => {
+    if ((window as any).electronAPI?.onWorkspaceInit) {
+      const cleanup = (window as any).electronAPI.onWorkspaceInit((workspacePath: string) => {
+        handleOpenWorkspace(workspacePath, false);
+      });
+      return () => { if (typeof cleanup === 'function') cleanup(); };
+    }
   }, []);
 
   // Global Keyboard Shortcuts
@@ -349,6 +456,16 @@ export const App: React.FC = () => {
     if ((window as any).electronAPI?.onMenuCommand) {
       const cleanup = (window as any).electronAPI.onMenuCommand((cmd: string) => {
         switch (cmd) {
+          case 'new-window':
+            handleNewWindow();
+            break;
+          case 'open-folder':
+            handleOpenProjectFolder();
+            break;
+          case 'create-new-project':
+            setProjectModalTab('create');
+            setIsProjectModalOpen(true);
+            break;
           case 'new-file':
             handleCreateFile('untitled.ts', false);
             break;
@@ -436,7 +553,7 @@ export const App: React.FC = () => {
       });
       return () => cleanup();
     }
-  }, [tabs, activeTabIndex]);
+  }, [tabs, activeTabIndex, workspaceRoot]);
 
   // File Operations
   const handleSelectFile = async (filePath: string) => {
@@ -447,7 +564,9 @@ export const App: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`);
+      const headers: Record<string, string> = {};
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
+      const res = await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`, { headers });
       const data = await res.json();
       if (data.success) {
         const newTab: EditorTab = {
@@ -468,9 +587,11 @@ export const App: React.FC = () => {
 
   const handleCreateFile = async (filePath: string, isDirectory: boolean) => {
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       await fetch(`${API_BASE}/api/file/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ path: filePath, isDirectory, content: '' })
       });
       await loadFiles();
@@ -484,8 +605,11 @@ export const App: React.FC = () => {
 
   const handleDeleteFile = async (filePath: string) => {
     try {
+      const headers: Record<string, string> = {};
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       await fetch(`${API_BASE}/api/file?path=${encodeURIComponent(filePath)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
       });
       setTabs(prev => prev.filter(t => t.path !== filePath));
       await loadFiles();
@@ -499,9 +623,11 @@ export const App: React.FC = () => {
     if (!activeTab || !activeTab.isDirty) return;
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       await fetch(`${API_BASE}/api/file`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ path: activeTab.path, content: activeTab.content })
       });
       setTabs(prev => prev.map((t, idx) => 
@@ -534,9 +660,11 @@ export const App: React.FC = () => {
 
   const handleRenameFile = async (oldPath: string, newPath: string) => {
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/file/rename`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ oldPath, newPath })
       });
       const data = await res.json();
@@ -555,9 +683,11 @@ export const App: React.FC = () => {
 
   const handleDuplicateFile = async (filePath: string) => {
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/file/duplicate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ path: filePath })
       });
       const data = await res.json();
@@ -580,9 +710,11 @@ export const App: React.FC = () => {
     for (const tab of tabs) {
       if (tab.isDirty) {
         try {
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
           await fetch(`${API_BASE}/api/file`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ path: tab.path, content: tab.content })
           });
         } catch (e) {
@@ -598,10 +730,12 @@ export const App: React.FC = () => {
 
   const handleRunTerminalCommand = async (command: string, cwd?: string) => {
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${API_BASE}/api/terminal/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command, cwd: cwd || terminalCwd })
+        headers,
+        body: JSON.stringify({ command, cwd: cwd || terminalCwd || workspaceRoot })
       });
       const data = await res.json();
       const newCwd = data.cwd || cwd || terminalCwd;
@@ -1121,12 +1255,26 @@ export const App: React.FC = () => {
           <span className="text-[12px] font-medium text-white flex items-center gap-1.5">
             <AppLogo size={18} className="w-[18px] h-[18px] shrink-0 rounded" />
             <span>BlackHat</span>
+            {workspaceRoot && (
+              <span className="text-[11px] font-normal text-[#888888] flex items-center gap-1">
+                <span>/</span>
+                <span className="text-[#cccccc] font-medium truncate max-w-[140px]">
+                  {workspaceRoot.split(/[/\\]/).filter(Boolean).pop()}
+                </span>
+              </span>
+            )}
           </span>
 
           {/* Antigravity / VS Code-style Application Menu Bar */}
           <TopMenuBar
             onNewFile={() => handleCreateFile('untitled.ts', false)}
             onNewFolder={() => handleCreateFile('new_folder', true)}
+            onNewWindow={handleNewWindow}
+            onOpenProject={handleOpenProjectFolder}
+            onCreateProject={() => {
+              setProjectModalTab('create');
+              setIsProjectModalOpen(true);
+            }}
             onSaveFile={handleSaveFile}
             onSaveAllFiles={handleSaveAllFiles}
             onCloseActiveTab={() => { if (tabs.length > 0) handleCloseTab(activeTabIndex); }}
@@ -1278,12 +1426,14 @@ export const App: React.FC = () => {
               <GlobalSearch
                 onOpenFile={(path) => handleSelectFile(path)}
                 apiBase={API_BASE}
+                workspaceRoot={workspaceRoot}
               />
             )}
             {activeView === 'source-control' && (
               <SourceControl
                 onOpenFile={(path) => handleSelectFile(path)}
                 apiBase={API_BASE}
+                workspaceRoot={workspaceRoot}
               />
             )}
             {activeView === 'run-debug' && (
@@ -1440,6 +1590,22 @@ export const App: React.FC = () => {
         onOpenExtensions={() => setActiveView('extensions')}
         onOpenAccount={() => setIsAccountModalOpen(true)}
         onOpenAddAgent={() => setIsAddAgentModalOpen(true)}
+        onNewWindow={handleNewWindow}
+        onOpenProject={handleOpenProjectFolder}
+        onCreateProject={() => {
+          setProjectModalTab('create');
+          setIsProjectModalOpen(true);
+        }}
+      />
+
+      {/* Project & Workspace Manager Modal */}
+      <ProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        currentWorkspace={workspaceRoot}
+        onOpenWorkspace={handleOpenWorkspace}
+        isElectron={isElectron}
+        initialTab={projectModalTab}
       />
     </div>
   );

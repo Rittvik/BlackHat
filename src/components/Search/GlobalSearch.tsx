@@ -10,9 +10,10 @@ interface SearchResult {
 interface GlobalSearchProps {
   onOpenFile: (path: string, line?: number) => void;
   apiBase: string;
+  workspaceRoot?: string;
 }
 
-export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase }) => {
+export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase, workspaceRoot }) => {
   const [query, setQuery] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [isRegex, setIsRegex] = useState(false);
@@ -27,8 +28,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onOpenFile, apiBase 
     setLoading(true);
     setSearched(true);
     try {
+      const headers: Record<string, string> = {};
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(
-        `${apiBase}/api/search?q=${encodeURIComponent(query)}&caseSensitive=${caseSensitive}&isRegex=${isRegex}`
+        `${apiBase}/api/search?q=${encodeURIComponent(query)}&caseSensitive=${caseSensitive}&isRegex=${isRegex}`,
+        { headers }
       );
       const data = await res.json();
       if (data.success) {

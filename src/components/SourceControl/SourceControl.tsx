@@ -9,9 +9,10 @@ interface GitFile {
 interface SourceControlProps {
   onOpenFile: (path: string) => void;
   apiBase: string;
+  workspaceRoot?: string;
 }
 
-export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBase }) => {
+export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBase, workspaceRoot }) => {
   const [branch, setBranch] = useState('main');
   const [files, setFiles] = useState<GitFile[]>([]);
   const [commitMessage, setCommitMessage] = useState('');
@@ -22,7 +23,9 @@ export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBas
   const fetchStatus = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/api/git/status`);
+      const headers: Record<string, string> = {};
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
+      const res = await fetch(`${apiBase}/api/git/status`, { headers });
       const data = await res.json();
       if (data.success) {
         setBranch(data.branch || 'main');
@@ -37,15 +40,17 @@ export const SourceControl: React.FC<SourceControlProps> = ({ onOpenFile, apiBas
 
   useEffect(() => {
     fetchStatus();
-  }, []);
+  }, [workspaceRoot]);
 
   const handleCommit = async () => {
     if (!commitMessage.trim()) return;
     setCommitting(true);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (workspaceRoot) headers['x-workspace-root'] = workspaceRoot;
       const res = await fetch(`${apiBase}/api/git/commit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ message: commitMessage.trim() })
       });
       const data = await res.json();

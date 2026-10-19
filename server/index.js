@@ -48,7 +48,21 @@ function ensureSpawnHelperPermissions() {
 }
 ensureSpawnHelperPermissions();
 
-const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || (process.cwd() === '/' ? path.join(os.homedir(), 'BlackHat') : process.cwd());
+const DEFAULT_WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || (process.cwd() === '/' ? path.join(os.homedir(), 'BlackHat') : process.cwd());
+let WORKSPACE_ROOT = DEFAULT_WORKSPACE_ROOT;
+
+function getWorkspaceRoot(req) {
+  const custom = req?.headers?.['x-workspace-root'] || req?.query?.workspace;
+  if (custom && typeof custom === 'string') {
+    try {
+      const resolved = path.resolve(custom);
+      if (fsSync.existsSync(resolved) && fsSync.statSync(resolved).isDirectory()) {
+        return resolved;
+      }
+    } catch {}
+  }
+  return WORKSPACE_ROOT;
+}
 
 // Active agent runners map: agentId -> runner
 const activeRunners = new Map();
@@ -178,8 +192,9 @@ async function getFileTree(dir, relativePath = '', depth = 0) {
 // 1. Filesystem Endpoints
 app.get('/api/files', async (req, res) => {
   try {
-    const tree = await getFileTree(WORKSPACE_ROOT);
-    res.json({ success: true, tree });
+    const root = getWorkspaceRoot(req);
+    const tree = await getFileTree(root);
+    res.json({ success: true, tree, workspaceRoot: root });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -189,7 +204,8 @@ app.get('/api/file', async (req, res) => {
   try {
     const relPath = req.query.path;
     if (!relPath) return res.status(400).json({ error: 'Missing path query parameter' });
-    const fullPath = path.resolve(WORKSPACE_ROOT, relPath);
+    const root = getWorkspaceRoot(req);
+    const fullPath = path.resolve(root, relPath);
     const content = await fs.readFile(fullPath, 'utf-8');
     res.json({ success: true, content, path: relPath });
   } catch (err) {
@@ -201,7 +217,8 @@ app.post('/api/file', async (req, res) => {
   try {
     const { path: relPath, content } = req.body;
     if (!relPath) return res.status(400).json({ error: 'Missing path in request body' });
-    const fullPath = path.resolve(WORKSPACE_ROOT, relPath);
+    const root = getWorkspaceRoot(req);
+    const fullPath = path.resolve(root, relPath);
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
     await fs.writeFile(fullPath, content, 'utf-8');
     res.json({ success: true, message: `Saved ${relPath}` });
@@ -213,7 +230,8 @@ app.post('/api/file', async (req, res) => {
 app.post('/api/file/create', async (req, res) => {
   try {
     const { path: relPath, isDirectory, content = '' } = req.body;
-    const fullPath = path.resolve(WORKSPACE_ROOT, relPath);
+    const root = getWorkspaceRoot(req);
+    const fullPath = path.resolve(root, relPath);
     if (isDirectory) {
       await fs.mkdir(fullPath, { recursive: true });
     } else {
@@ -229,7 +247,8 @@ app.post('/api/file/create', async (req, res) => {
 app.delete('/api/file', async (req, res) => {
   try {
     const relPath = req.query.path;
-    const fullPath = path.resolve(WORKSPACE_ROOT, relPath);
+    const root = getWorkspaceRoot(req);
+    const fullPath = path.resolve(root, relPath);
     const stat = await fs.stat(fullPath);
     if (stat.isDirectory()) {
       await fs.rm(fullPath, { recursive: true, force: true });
@@ -246,8 +265,9 @@ app.post('/api/file/rename', async (req, res) => {
   try {
     const { oldPath, newPath } = req.body;
     if (!oldPath || !newPath) return res.status(400).json({ error: 'Missing oldPath or newPath' });
-    const fullOld = path.resolve(WORKSPACE_ROOT, oldPath);
-    const fullNew = path.resolve(WORKSPACE_ROOT, newPath);
+    const root = getWorkspaceRoot(req);
+    const fullOld = path.resolve(root, oldPath);
+    const fullNew = path.resolve(root, newPath);
     await fs.mkdir(path.dirname(fullNew), { recursive: true });
     await fs.rename(fullOld, fullNew);
     res.json({ success: true, message: `Renamed to ${newPath}` });
@@ -260,13 +280,14 @@ app.post('/api/file/duplicate', async (req, res) => {
   try {
     const { path: relPath } = req.body;
     if (!relPath) return res.status(400).json({ error: 'Missing path' });
-    const fullPath = path.resolve(WORKSPACE_ROOT, relPath);
+    const root = getWorkspaceRoot(req);
+    const fullPath = path.resolve(root, relPath);
     const ext = path.extname(relPath);
     const base = path.basename(relPath, ext);
     const dir = path.dirname(relPath);
     const newName = `${base}_copy${ext}`;
     const newRelPath = dir === '.' ? newName : path.join(dir, newName);
-    const fullNew = path.resolve(WORKSPACE_ROOT, newRelPath);
+    const fullNew = path.resolve(root, newRelPath);
     await fs.copyFile(fullPath, fullNew);
     res.json({ success: true, newPath: newRelPath });
   } catch (err) {
@@ -339,7 +360,8 @@ app.get('/api/search', async (req, res) => {
       }
     }
 
-    await searchDir(WORKSPACE_ROOT);
+    const root = getWorkspaceRoot(req);
+    await searchDir(root);
     res.json({ success: true, results, total: results.length });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -348,7 +370,8 @@ app.get('/api/search', async (req, res) => {
 
 // 1c. Git Source Control Endpoints
 app.get('/api/git/status', async (req, res) => {
-  exec('git status --porcelain=v1 && git branch --show-current', { cwd: WORKSPACE_ROOT }, (error, stdout, stderr) => {
+  const root = getWorkspaceRoot(req);
+  exec('git status --porcelain=v1 && git branch --show-current', { cwd: root }, (error, stdout, stderr) => {
     if (error) {
       return res.json({ success: false, error: stderr || error.message });
     }
@@ -366,7 +389,8 @@ app.get('/api/git/status', async (req, res) => {
 app.post('/api/git/commit', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Commit message is required' });
-  exec(`git add -A && git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: WORKSPACE_ROOT }, (error, stdout, stderr) => {
+  const root = getWorkspaceRoot(req);
+  exec(`git add -A && git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: root }, (error, stdout, stderr) => {
     if (error) {
       return res.status(500).json({ success: false, error: stderr || error.message });
     }
@@ -376,9 +400,76 @@ app.post('/api/git/commit', async (req, res) => {
 
 app.get('/api/git/diff', async (req, res) => {
   const filePath = req.query.path || '';
-  exec(`git diff ${filePath}`, { cwd: WORKSPACE_ROOT }, (error, stdout, stderr) => {
+  const root = getWorkspaceRoot(req);
+  exec(`git diff ${filePath}`, { cwd: root }, (error, stdout, stderr) => {
     res.json({ success: !error, diff: stdout || '' });
   });
+});
+
+// 1d. Project Creation & Validation Endpoints
+app.post('/api/project/create', async (req, res) => {
+  const { projectPath, projectName, template = 'empty' } = req.body;
+  if (!projectPath && !projectName) {
+    return res.status(400).json({ success: false, error: 'Missing projectPath or projectName' });
+  }
+
+  const baseDir = projectPath ? path.resolve(projectPath) : path.join(os.homedir(), projectName);
+  try {
+    await fs.mkdir(baseDir, { recursive: true });
+
+    // Initialize template files if empty
+    const entries = await fs.readdir(baseDir);
+    if (entries.length === 0) {
+      const safeName = (projectName || path.basename(baseDir)).toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+      if (template === 'react-ts' || template === 'typescript') {
+        await fs.writeFile(path.join(baseDir, 'package.json'), JSON.stringify({
+          name: safeName,
+          version: '1.0.0',
+          private: true,
+          type: 'module',
+          scripts: { dev: 'vite', build: 'tsc && vite build' }
+        }, null, 2));
+        await fs.mkdir(path.join(baseDir, 'src'), { recursive: true });
+        await fs.writeFile(path.join(baseDir, 'src', 'index.ts'), `// Entry point for ${projectName || path.basename(baseDir)}\nconsole.log('Welcome to ${projectName || path.basename(baseDir)} built with BlackHat IDE');\n`);
+        await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nProject initialized in BlackHat IDE.\n`);
+      } else if (template === 'python') {
+        await fs.writeFile(path.join(baseDir, 'main.py'), `# Entry point for ${projectName || path.basename(baseDir)}\ndef main():\n    print("Hello from BlackHat IDE!")\n\nif __name__ == "__main__":\n    main()\n`);
+        await fs.writeFile(path.join(baseDir, 'requirements.txt'), `# Project dependencies\n`);
+        await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nPython project created in BlackHat IDE.\n`);
+      } else if (template === 'node') {
+        await fs.writeFile(path.join(baseDir, 'package.json'), JSON.stringify({
+          name: safeName,
+          version: '1.0.0',
+          main: 'index.js',
+          type: 'module'
+        }, null, 2));
+        await fs.writeFile(path.join(baseDir, 'index.js'), `// ${projectName || path.basename(baseDir)}\nconsole.log('Node.js service running in BlackHat IDE');\n`);
+        await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nNode.js project created in BlackHat IDE.\n`);
+      } else {
+        await fs.writeFile(path.join(baseDir, 'README.md'), `# ${projectName || path.basename(baseDir)}\n\nWorkspace created in BlackHat IDE.\n`);
+      }
+    }
+
+    res.json({ success: true, projectPath: baseDir });
+  } catch (err) {
+    console.error('Failed to create project:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/project/validate', (req, res) => {
+  const target = req.query.path;
+  if (!target || typeof target !== 'string') {
+    return res.status(400).json({ valid: false, error: 'Path is required' });
+  }
+  try {
+    const resolved = path.resolve(target.startsWith('~') ? path.join(os.homedir(), target.slice(1)) : target);
+    const exists = fsSync.existsSync(resolved);
+    const isDir = exists && fsSync.statSync(resolved).isDirectory();
+    res.json({ valid: exists && isDir, path: resolved, exists, isDirectory: isDir });
+  } catch (err) {
+    res.json({ valid: false, error: err.message });
+  }
 });
 
 // 2. Terminal Command Execution
@@ -389,18 +480,19 @@ app.post('/api/terminal/run', async (req, res) => {
   const isWindows = process.platform === 'win32';
   const shell = isWindows ? (process.env.COMSPEC || 'powershell.exe') : (process.env.SHELL || '/bin/zsh');
 
-  let executionCwd = WORKSPACE_ROOT;
+  const root = getWorkspaceRoot(req);
+  let executionCwd = root;
   if (reqCwd) {
     const candidate = reqCwd.startsWith('~') ? path.join(os.homedir(), reqCwd.slice(1)) : reqCwd;
-    executionCwd = path.isAbsolute(candidate) ? candidate : path.resolve(WORKSPACE_ROOT, candidate);
+    executionCwd = path.isAbsolute(candidate) ? candidate : path.resolve(root, candidate);
   }
 
-  // Ensure executionCwd exists; fallback to WORKSPACE_ROOT if deleted
+  // Ensure executionCwd exists; fallback to root if deleted
   try {
     const s = await fs.stat(executionCwd);
-    if (!s.isDirectory()) executionCwd = WORKSPACE_ROOT;
+    if (!s.isDirectory()) executionCwd = root;
   } catch {
-    executionCwd = WORKSPACE_ROOT;
+    executionCwd = root;
   }
 
   // Shell probe to capture final CWD and preserve the child command's exit code
@@ -429,8 +521,9 @@ app.post('/api/terminal/run', async (req, res) => {
 });
 
 app.get('/api/workspace/info', (req, res) => {
+  const root = getWorkspaceRoot(req);
   res.json({
-    workspaceRoot: WORKSPACE_ROOT,
+    workspaceRoot: root,
     username: os.userInfo().username || 'developer',
     hostname: os.hostname().split('.')[0] || 'localhost',
     platform: process.platform,
@@ -976,7 +1069,8 @@ app.post('/api/agent/stream', (req, res) => {
     activeRunners.delete(agentId);
   });
 
-  runner.run({ agentId, role, name, prompt, history, config, workspaceContext, sharedContext })
+  const currentWorkspace = getWorkspaceRoot(req);
+  runner.run({ agentId, role, name, prompt, history, config, workspaceContext, sharedContext, workspaceRoot: currentWorkspace })
     .finally(() => {
       activeRunners.delete(agentId);
       res.end();

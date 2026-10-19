@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 
 export interface TopMenuBarProps {
+  onNewWindow?: () => void;
+  onOpenProject?: () => void;
+  onCreateProject?: () => void;
   onNewFile: () => void;
   onNewFolder: () => void;
   onSaveFile: () => void;
@@ -34,6 +37,9 @@ interface MenuItem {
 }
 
 export const TopMenuBar: React.FC<TopMenuBarProps> = ({
+  onNewWindow,
+  onOpenProject,
+  onCreateProject,
   onNewFile,
   onNewFolder,
   onSaveFile,
@@ -74,6 +80,10 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
 
   const menus: Record<string, MenuItem[]> = {
     File: [
+      { label: 'New Window', shortcut: '⇧⌘N', action: onNewWindow },
+      { label: 'Open Folder / Project...', shortcut: '⌘O', action: onOpenProject },
+      { label: 'Create New Project...', action: onCreateProject },
+      { separator: true },
       { label: 'New Text File', shortcut: '⌘N', action: onNewFile },
       { label: 'New Folder...', action: onNewFolder },
       { separator: true },

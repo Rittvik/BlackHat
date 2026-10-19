@@ -7,7 +7,10 @@ import {
   Plus, 
   Blocks, 
   User, 
-  Bot
+  Bot,
+  AppWindow,
+  FolderOpen,
+  FolderPlus
 } from 'lucide-react';
 
 interface CommandItem {
@@ -29,6 +32,9 @@ interface CommandPaletteProps {
   onOpenExtensions?: () => void;
   onOpenAccount?: () => void;
   onOpenAddAgent?: () => void;
+  onNewWindow?: () => void;
+  onOpenProject?: () => void;
+  onCreateProject?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -41,12 +47,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSaveFile,
   onOpenExtensions,
   onOpenAccount,
-  onOpenAddAgent
+  onOpenAddAgent,
+  onNewWindow,
+  onOpenProject,
+  onCreateProject
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const commands: CommandItem[] = [
+    ...(onNewWindow ? [{
+      id: 'new-window',
+      title: 'Window: New Window',
+      subtitle: 'Open a new independent BlackHat IDE window',
+      icon: <AppWindow className="w-4 h-4 text-[#58a6ff]" />,
+      action: onNewWindow
+    }] : []),
+    ...(onOpenProject ? [{
+      id: 'open-project',
+      title: 'File: Open Folder / Project...',
+      subtitle: 'Open an existing workspace folder in current or new window',
+      icon: <FolderOpen className="w-4 h-4 text-[#d29922]" />,
+      action: onOpenProject
+    }] : []),
+    ...(onCreateProject ? [{
+      id: 'create-project',
+      title: 'File: Create New Project...',
+      subtitle: 'Scaffold TypeScript, Python, or Node project template',
+      icon: <FolderPlus className="w-4 h-4 text-[#3fb950]" />,
+      action: onCreateProject
+    }] : []),
     {
       id: 'run-all-agents',
       title: 'Run Architect, Developer & Tester',

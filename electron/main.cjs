@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu, dialog } = require('electron');
 const path = require('path');
 const http = require('http');
 const os = require('os');
@@ -11,6 +11,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   let mainWindow = null;
+  const openWindows = new Set();
   let serverProcess = null;
 
   const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged;
@@ -54,8 +55,9 @@ if (!gotTheLock) {
   }
 
   function sendMenuCommand(cmd) {
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('menu-command', cmd);
+    const targetWin = BrowserWindow.getFocusedWindow() || mainWindow;
+    if (targetWin && targetWin.webContents) {
+      targetWin.webContents.send('menu-command', cmd);
     }
   }
 
@@ -89,6 +91,50 @@ if (!gotTheLock) {
         label: 'File',
         submenu: [
           {
+            label: 'New Window',
+            accelerator: 'CmdOrCtrl+Shift+N',
+            click: () => createWindow()
+          },
+          {
+            label: 'Open Folder / Project...',
+            accelerator: 'CmdOrCtrl+O',
+            click: async () => {
+              const targetWin = BrowserWindow.getFocusedWindow() || mainWindow;
+              const result = await dialog.showOpenDialog(targetWin || null, {
+                title: 'Open Existing Project or Create New Folder',
+                buttonLabel: 'Open Folder',
+                properties: ['openDirectory', 'createDirectory']
+              });
+              if (!result.canceled && result.filePaths.length > 0) {
+                const folderPath = result.filePaths[0];
+                if (targetWin && targetWin.webContents) {
+                  targetWin.webContents.send('open-project-folder', folderPath);
+                } else {
+                  createWindow(folderPath);
+                }
+              }
+            }
+          },
+          {
+            label: 'New Window with Folder...',
+            click: async () => {
+              const targetWin = BrowserWindow.getFocusedWindow() || mainWindow;
+              const result = await dialog.showOpenDialog(targetWin || null, {
+                title: 'Select Folder for New Window',
+                buttonLabel: 'Open in New Window',
+                properties: ['openDirectory', 'createDirectory']
+              });
+              if (!result.canceled && result.filePaths.length > 0) {
+                createWindow(result.filePaths[0]);
+              }
+            }
+          },
+          {
+            label: 'Create New Project...',
+            click: () => sendMenuCommand('create-new-project')
+          },
+          { type: 'separator' },
+          {
             label: 'New Text File',
             accelerator: 'CmdOrCtrl+N',
             click: () => sendMenuCommand('new-file')
@@ -99,8 +145,8 @@ if (!gotTheLock) {
           },
           { type: 'separator' },
           {
-            label: 'Open File / Quick Open...',
-            accelerator: 'CmdOrCtrl+O',
+            label: 'Quick Open...',
+            accelerator: 'CmdOrCtrl+P',
             click: () => sendMenuCommand('command-palette')
           },
           { type: 'separator' },
@@ -119,6 +165,14 @@ if (!gotTheLock) {
             label: 'Close Editor',
             accelerator: 'CmdOrCtrl+W',
             click: () => sendMenuCommand('close-active-tab')
+          },
+          {
+            label: 'Close Window',
+            accelerator: 'CmdOrCtrl+Shift+W',
+            click: () => {
+              const targetWin = BrowserWindow.getFocusedWindow() || mainWindow;
+              if (targetWin) targetWin.close();
+            }
           },
           {
             label: 'Close All Editors',
@@ -320,9 +374,9 @@ if (!gotTheLock) {
     Menu.setApplicationMenu(menu);
   }
 
-  function createWindow() {
+  function createWindow(targetWorkspace) {
     const iconPath = path.join(__dirname, '..', 'build', isMac ? 'icon.icns' : 'icon.png');
-    mainWindow = new BrowserWindow({
+    const win = new BrowserWindow({
       width: 1440,
       height: 920,
       minWidth: 1080,
@@ -348,6 +402,9 @@ if (!gotTheLock) {
       }
     });
 
+    openWindows.add(win);
+    mainWindow = win;
+
     if (isMac && app.dock) {
       const dockPng = path.join(__dirname, '..', 'build', 'icon.png');
       try {
@@ -357,47 +414,85 @@ if (!gotTheLock) {
       }
     }
 
+    const queryParams = targetWorkspace ? `?workspace=${encodeURIComponent(targetWorkspace)}` : '';
     if (isDev) {
-      mainWindow.loadURL('http://localhost:5173');
+      win.loadURL(`http://localhost:5173${queryParams}`);
     } else {
-      mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+      win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'), {
+        search: targetWorkspace ? `workspace=${encodeURIComponent(targetWorkspace)}` : ''
+      });
     }
 
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    win.webContents.on('did-finish-load', () => {
+      if (targetWorkspace) {
+        win.webContents.send('workspace-init', targetWorkspace);
+      }
+    });
+
+    win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
       console.error(`[BlackHat UI Load Failure] Code: ${errorCode}, Description: ${errorDescription}, URL: ${validatedURL}`);
     });
 
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    win.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url);
       return { action: 'deny' };
     });
 
-    mainWindow.on('closed', () => {
-      mainWindow = null;
+    win.on('closed', () => {
+      openWindows.delete(win);
+      if (mainWindow === win) {
+        mainWindow = openWindows.size > 0 ? Array.from(openWindows)[0] : null;
+      }
     });
+
+    return win;
   }
 
-  // Window control IPCs
-  ipcMain.on('window-minimize', () => {
-    if (mainWindow) mainWindow.minimize();
+  // Window control IPCs (properly routed per window)
+  ipcMain.on('window-minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    if (win) win.minimize();
   });
 
-  ipcMain.on('window-maximize', () => {
-    if (mainWindow) {
-      if (mainWindow.isMaximized()) {
-        mainWindow.unmaximize();
+  ipcMain.on('window-maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
       } else {
-        mainWindow.maximize();
+        win.maximize();
       }
     }
   });
 
-  ipcMain.on('window-close', () => {
-    if (mainWindow) mainWindow.close();
+  ipcMain.on('window-close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    if (win) win.close();
   });
 
-  ipcMain.handle('window-is-maximized', () => {
-    return mainWindow ? mainWindow.isMaximized() : false;
+  ipcMain.handle('window-is-maximized', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    return win ? win.isMaximized() : false;
+  });
+
+  // Open native OS folder chooser dialog
+  ipcMain.handle('open-folder-dialog', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    const result = await dialog.showOpenDialog(win || null, {
+      title: 'Open Existing Project or Create New Folder',
+      buttonLabel: 'Select Folder',
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
+
+  // Create new window with optional workspace path
+  ipcMain.handle('create-new-window', async (_, workspacePath) => {
+    createWindow(workspacePath);
+    return true;
   });
 
   ipcMain.on('open-external', (_, url) => {

@@ -40,8 +40,30 @@ async function searchInDirectory(dir, query, maxResults = 30) {
   return results;
 }
 
-export async function executeTool(name, args) {
+export function getToolsForRole(role) {
+  if (role === 'ARCHITECT') {
+    // Architect has exploration, inspection, reading, and searching capabilities ONLY.
+    // Explicitly restricted from writing/modifying code or executing shell processes.
+    return TOOL_DEFINITIONS.filter(t => ['read_file', 'list_dir', 'search_files'].includes(t.name));
+  }
+  if (role === 'TESTER') {
+    // Tester can inspect, search, and run test runner commands
+    return TOOL_DEFINITIONS.filter(t => ['read_file', 'list_dir', 'search_files', 'run_command'].includes(t.name));
+  }
+  // Developer has full implementation & workspace tool suite
+  return TOOL_DEFINITIONS;
+}
+
+export async function executeTool(name, args, role = 'DEVELOPER') {
   try {
+    // Role-based action boundary enforcement
+    if (role === 'ARCHITECT' && ['write_file', 'edit_file', 'run_command'].includes(name)) {
+      return {
+        success: false,
+        error: `Action Denied: The Architect agent is restricted from writing code or running execution commands. As Lead Architect, your responsibility is to explore the problem, design the high-level system architecture, define contracts, and formulate task breakdown plans for the Developer agent to implement.`
+      };
+    }
+
     switch (name) {
       case 'read_file': {
         const filePath = path.resolve(WORKSPACE_ROOT, args.path);

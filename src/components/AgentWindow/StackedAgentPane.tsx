@@ -16,7 +16,8 @@ import {
   ArrowUp,
   ChevronRight,
   ChevronDown,
-  X
+  X,
+  ArrowRightCircle
 } from 'lucide-react';
 import { AgentInstance, AISettings, AgentRole } from '../../types';
 
@@ -36,6 +37,7 @@ interface StackedAgentPaneProps {
   onSelectModel: (model: string, provider: any) => void;
   onApplyCodeToEditor?: (code: string) => void;
   onShareToContextBus?: (title: string, content: string, type: 'plan' | 'code' | 'test' | 'summary') => void;
+  onHandoffToDeveloper?: (planContent: string) => void;
 }
 
 export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
@@ -53,7 +55,8 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
   onClear,
   onSelectModel,
   onApplyCodeToEditor,
-  onShareToContextBus
+  onShareToContextBus,
+  onHandoffToDeveloper
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -93,9 +96,14 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
     switch (role) {
       case 'ARCHITECT':
         return (
-          <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#818cf8]/15 text-[#818cf8] border border-[#818cf8]/25 font-medium tracking-wide">
-            ARCHITECT
-          </span>
+          <div className="flex items-center gap-1">
+            <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#818cf8]/15 text-[#818cf8] border border-[#818cf8]/25 font-medium tracking-wide">
+              ARCHITECT
+            </span>
+            <span className="hidden sm:inline text-[9px] text-[#818cf8]/80 font-mono">
+              [Plan Only]
+            </span>
+          </div>
         );
       case 'DEVELOPER':
         return (
@@ -394,7 +402,23 @@ export const StackedAgentPane: React.FC<StackedAgentPaneProps> = ({
                                 <span>Copy</span>
                               </button>
 
-                              {onApplyCodeToEditor && msg.content.includes('```') && (
+                              {/* Architect Action: Hand off Blueprint/Plan to Developer */}
+                              {agent.role === 'ARCHITECT' && onHandoffToDeveloper && (
+                                <button
+                                  title="Hand off this architecture blueprint to the Developer agent"
+                                  onClick={() => {
+                                    handleShareContext(msg.id, msg.content);
+                                    onHandoffToDeveloper(msg.content);
+                                  }}
+                                  className="px-2 py-0.5 rounded bg-[#818cf8]/20 hover:bg-[#818cf8]/30 text-[#818cf8] hover:text-white border border-[#818cf8]/40 transition-colors flex items-center gap-1 font-medium cursor-pointer"
+                                >
+                                  <ArrowRightCircle className="w-3 h-3" />
+                                  <span>Hand off Plan to Dev</span>
+                                </button>
+                              )}
+
+                              {/* Developer/Tester Action: Apply code to editor (Architect restricted from direct code writes) */}
+                              {agent.role !== 'ARCHITECT' && onApplyCodeToEditor && msg.content.includes('```') && (
                                 <button
                                   title="Apply code to editor"
                                   onClick={() => {

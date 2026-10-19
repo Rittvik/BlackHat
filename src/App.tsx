@@ -79,7 +79,7 @@ const INITIAL_AGENTS: AgentInstance[] = [
     id: 'agent-architect',
     name: 'Architect',
     role: 'ARCHITECT',
-    description: 'Decomposes complex requirements into architectural blueprints, data flow models, and technical specifications.',
+    description: 'Explores and designs high-level system architecture, technology selection, interface contracts, and task plans for Developer. (Action-restricted from writing code directly).',
     avatarColor: 'bg-indigo-600',
     provider: 'free',
     model: 'deepseek-r1',
@@ -87,13 +87,13 @@ const INITIAL_AGENTS: AgentInstance[] = [
     messages: [],
     input: '',
     isMinimized: false,
-    systemPrompt: 'You are the Lead Architect agent in BlackHat IDE. Create modular system designs and task contracts.'
+    systemPrompt: 'You are the Lead Architect in BlackHat IDE. Your knowledge is unbounded across global software engineering, system topology, distributed systems, and modern paradigms. You explore, inspect, and design blueprints, contracts, and execution plans for the Developer agent. You do NOT write code or modify files.'
   },
   {
     id: 'agent-developer',
     name: 'Developer',
     role: 'DEVELOPER',
-    description: 'Implements production code, executes tools, refactors modules, and resolves technical defects.',
+    description: 'Core implementation agent. Takes blueprints and task breakdowns from the Architect to write robust production code and execute tools.',
     avatarColor: 'bg-cyan-600',
     provider: 'free',
     model: 'qwen-coder',
@@ -101,13 +101,13 @@ const INITIAL_AGENTS: AgentInstance[] = [
     messages: [],
     input: '',
     isMinimized: false,
-    systemPrompt: 'You are the Core Developer agent in BlackHat IDE. Write clean, working code and execute file operations.'
+    systemPrompt: 'You are the Core Developer in BlackHat IDE. Take blueprints and milestone specifications from the Architect, and user goals, to implement working production software.'
   },
   {
     id: 'agent-tester',
     name: 'Tester',
     role: 'TESTER',
-    description: 'Automates testing, checks boundary assertions, verifies edge conditions, and enforces regression prevention.',
+    description: 'Quality assurance agent. Validates implementations against Architect contracts, runs test runners, and audits edge cases.',
     avatarColor: 'bg-emerald-600',
     provider: 'free',
     model: 'llama-3.3',
@@ -115,7 +115,7 @@ const INITIAL_AGENTS: AgentInstance[] = [
     messages: [],
     input: '',
     isMinimized: false,
-    systemPrompt: 'You are the QA & Testing agent in BlackHat IDE. Generate comprehensive unit tests and validate edge cases.'
+    systemPrompt: 'You are the QA & Testing agent in BlackHat IDE. Verify code against architectural specifications, audit boundary limits, and run test suites.'
   }
 ];
 

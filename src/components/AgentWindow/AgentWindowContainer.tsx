@@ -313,6 +313,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                   onSelectModel={(model, prov) => onSelectAgentModel(agent.id, model, prov)}
                   onApplyCodeToEditor={onApplyCodeToEditor}
                   onShareToContextBus={onShareToContextBus}
+                  onHandoffToDeveloper={(plan) => onSendMessage('agent-developer', `Execute implementation plan formulated by Lead Architect:\n${plan}`)}
                 />
               </div>
             );
@@ -337,6 +338,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                   onSelectModel={(model, prov) => onSelectAgentModel(agent.id, model, prov)}
                   onApplyCodeToEditor={onApplyCodeToEditor}
                   onShareToContextBus={onShareToContextBus}
+                  onHandoffToDeveloper={(plan) => onSendMessage('agent-developer', `Execute implementation plan formulated by Lead Architect:\n${plan}`)}
                 />
               </div>
             );
@@ -362,6 +364,7 @@ export const AgentWindowContainer: React.FC<AgentWindowContainerProps> = ({
                   onSelectModel={(model, prov) => onSelectAgentModel(agent.id, model, prov)}
                   onApplyCodeToEditor={onApplyCodeToEditor}
                   onShareToContextBus={onShareToContextBus}
+                  onHandoffToDeveloper={(plan) => onSendMessage('agent-developer', `Execute implementation plan formulated by Lead Architect:\n${plan}`)}
                 />
                 {idx < visibleAgents.length - 1 && (
                   <div className="h-[1px] w-full bg-[#2b2b2b] shrink-0" />

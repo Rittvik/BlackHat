@@ -20,6 +20,7 @@ interface StatusBarProps {
   user: UserProfile;
   sharedContextCount: number;
   installedExtensionsCount: number;
+  mcpServersCount?: number;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -31,7 +32,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onOpenAccountModal,
   user,
   sharedContextCount,
-  installedExtensionsCount
+  installedExtensionsCount,
+  mcpServersCount = 0
 }) => {
   return (
     <div className="h-[26px] px-3 flex items-center justify-between apple-glass border-t border-white/[0.08] text-[11px] text-white/55 select-none shrink-0 font-sans apple-specular-top relative z-30">
@@ -97,9 +99,18 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </button>
 
         {/* Extensions active */}
-        <div className="flex items-center gap-1 text-white/50 px-1.5 py-0.5">
+        <div title={`${installedExtensionsCount} Extensions Installed`} className="flex items-center gap-1 text-white/50 px-1.5 py-0.5">
           <Blocks className="w-3 h-3" />
           <span>{installedExtensionsCount}</span>
+        </div>
+
+        {/* MCP Servers Active */}
+        <div 
+          title={`${mcpServersCount} Model Context Protocol (MCP) server(s) connected`} 
+          className="hidden sm:flex items-center gap-1.5 text-white/50 px-1.5 py-0.5 rounded-md hover:text-white hover:bg-white/[0.06] cursor-pointer transition-colors"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#388bfd] shadow-[0_0_5px_#388bfd]" />
+          <span>MCP: {mcpServersCount}</span>
         </div>
 
         {/* Language & Encoding */}

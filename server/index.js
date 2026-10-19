@@ -6,6 +6,8 @@ import fs from 'fs/promises';
 import { exec } from 'child_process';
 import { WebSocketServer } from 'ws';
 import { AgentRunner } from './agentRunner.js';
+import { extensionService } from './extensions.js';
+import { mcpManager } from './mcpClient.js';
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -1118,6 +1120,69 @@ app.get('/api/extensions/openvsx', async (req, res) => {
   }
 });
 
+// 5a. Extensions Management Endpoints (VSIX Installation, Manifest & Contributions)
+app.get('/api/extensions/installed', async (req, res) => {
+  try {
+    const list = await extensionService.getInstalledExtensions();
+    res.json({ success: true, extensions: list });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/extensions/install', async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ success: false, error: 'Missing extension id' });
+  try {
+    const record = await extensionService.installExtension(id);
+    res.json({ success: true, extension: record });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/extensions/uninstall', async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ success: false, error: 'Missing extension id' });
+  try {
+    await extensionService.uninstallExtension(id);
+    res.json({ success: true, message: `Extension ${id} uninstalled` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/extensions/theme', async (req, res) => {
+  const { id, path: themePath } = req.query;
+  if (!id || !themePath) return res.status(400).json({ success: false, error: 'Missing id or path' });
+  try {
+    const theme = await extensionService.getContributedTheme(id, themePath);
+    res.json({ success: true, theme });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 5b. MCP Server & Tool Endpoints
+app.get('/api/mcp/servers', (req, res) => {
+  res.json({ success: true, servers: mcpManager.getServersStatus() });
+});
+
+app.get('/api/mcp/tools', (req, res) => {
+  res.json({ success: true, tools: mcpManager.getAllTools() });
+});
+
+app.post('/api/mcp/call', async (req, res) => {
+  const { name, args } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Missing tool name' });
+  try {
+    const result = await mcpManager.executeMcpTool(name, args || {});
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // WebSocket Connection for Native Terminal & Real-Time Sync
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'connected', time: Date.now() }));
@@ -1200,6 +1265,12 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`[Antigravity IDE Server] Running on http://localhost:${PORT}`);
+  try {
+    await extensionService.init();
+    await mcpManager.initialize();
+  } catch (err) {
+    console.warn('[Startup] Extensions/MCP init warning:', err.message);
+  }
 });

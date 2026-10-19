@@ -340,6 +340,49 @@ export const App: React.FC = () => {
     ? 'http://localhost:3001' 
     : '';
 
+  const [mcpServersCount, setMcpServersCount] = useState<number>(0);
+
+  // Sync real installed extensions & active MCP servers from backend
+  useEffect(() => {
+    // 1. Extensions
+    fetch(`${API_BASE}/api/extensions/installed`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.extensions)) {
+          setExtensions(prev => {
+            const map = new Map(prev.map(e => [e.id, e]));
+            for (const item of data.extensions) {
+              map.set(item.id, {
+                ...item,
+                installed: true,
+                enabled: item.enabled !== false,
+                contributes: item.contributes
+              });
+            }
+            return Array.from(map.values());
+          });
+        }
+      })
+      .catch(() => {});
+
+    // 2. Connected MCP Servers
+    const checkMcp = () => {
+      fetch(`${API_BASE}/api/mcp/servers`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.servers)) {
+            const connected = data.servers.filter((s: any) => s.status === 'connected');
+            setMcpServersCount(connected.length);
+          }
+        })
+        .catch(() => {});
+    };
+
+    checkMcp();
+    const interval = setInterval(checkMcp, 12000);
+    return () => clearInterval(interval);
+  }, [API_BASE]);
+
   // Workspace & Multi-Window Project Management
   const [workspaceRoot, setWorkspaceRoot] = useState<string>(() => {
     try {
@@ -1218,14 +1261,15 @@ export const App: React.FC = () => {
     setSharedContextItems(prev => [newItem, ...prev]);
   };
 
-  // Extensions Store operations (Open VSX Marketplace Integration)
+  // Extensions Store operations (Real Open VSX VSIX Installation, Extraction & Theme Activation)
   const handleToggleInstallExtension = (extensionId: string) => {
     setExtensions(prev => prev.map(ext => 
       ext.id === extensionId ? { ...ext, installed: !ext.installed, enabled: true } : ext
     ));
   };
 
-  const handleInstallExtension = (ext: ExtensionItem) => {
+  const handleInstallExtension = async (ext: ExtensionItem) => {
+    // Optimistic progress state
     setExtensions(prev => {
       const exists = prev.find(e => e.id === ext.id);
       if (exists) {
@@ -1233,12 +1277,66 @@ export const App: React.FC = () => {
       }
       return [{ ...ext, installed: true, enabled: true }, ...prev];
     });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/extensions/install`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: ext.id })
+      });
+      const data = await res.json();
+      if (data.success && data.extension) {
+        const record = data.extension;
+        setExtensions(prev => {
+          const filtered = prev.filter(e => e.id !== ext.id);
+          return [{ ...record, installed: true, enabled: true }, ...filtered];
+        });
+
+        // Activate contributed themes if available
+        const themes = record.contributes?.themes;
+        if (themes && themes.length > 0) {
+          const themePath = themes[0].path;
+          try {
+            const themeRes = await fetch(`${API_BASE}/api/extensions/theme?id=${encodeURIComponent(ext.id)}&path=${encodeURIComponent(themePath)}`);
+            const themeData = await themeRes.json();
+            if (themeData.success && (window as any).monaco) {
+              const monaco = (window as any).monaco;
+              const themeName = `theme_${ext.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+              monaco.editor.defineTheme(themeName, {
+                base: 'vs-dark',
+                inherit: true,
+                rules: themeData.theme.tokenColors || [],
+                colors: themeData.theme.colors || {}
+              });
+              monaco.editor.setTheme(themeName);
+              console.log(`[Extensions] Activated theme '${themes[0].label || themeName}' from ${ext.displayName}`);
+            }
+          } catch (tErr) {
+            console.warn('[Extensions] Could not activate theme:', tErr);
+          }
+        }
+      } else {
+        console.warn(`[Extensions] Installation error: ${data.error}`);
+      }
+    } catch (err: any) {
+      console.error('[Extensions] Install failed:', err.message);
+    }
   };
 
-  const handleUninstallExtension = (extensionId: string) => {
+  const handleUninstallExtension = async (extensionId: string) => {
     setExtensions(prev => prev.map(ext => 
       ext.id === extensionId ? { ...ext, installed: false } : ext
     ));
+
+    try {
+      await fetch(`${API_BASE}/api/extensions/uninstall`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: extensionId })
+      });
+    } catch (err: any) {
+      console.warn('[Extensions] Uninstall error:', err.message);
+    }
   };
 
   const handleToggleEnableExtension = (extensionId: string) => {
@@ -1764,6 +1862,7 @@ export const App: React.FC = () => {
         user={user}
         sharedContextCount={sharedContextItems.length}
         installedExtensionsCount={extensions.filter(e => e.installed).length}
+        mcpServersCount={mcpServersCount}
       />
 
       {/* Settings Modal */}

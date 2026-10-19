@@ -127,6 +127,13 @@ export interface ExtensionItem {
   tags: string[];
   downloadUrl?: string;
   verified?: boolean;
+  contributes?: {
+    themes?: Array<{ label?: string; uiTheme?: string; path: string }>;
+    snippets?: Array<{ language?: string; path: string }>;
+    commands?: Array<{ command: string; title: string }>;
+    languages?: any[];
+    grammars?: any[];
+  };
 }
 
 export interface TerminalEntry {

@@ -511,6 +511,27 @@ export const ExtensionsStore: React.FC<ExtensionsStoreProps> = ({
                 {ext.description}
               </p>
 
+              {/* Contributions Badges */}
+              {ext.contributes && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  {ext.contributes.themes && ext.contributes.themes.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded bg-[#bc8cff]/15 text-[#bc8cff] border border-[#bc8cff]/30 text-[9px] font-medium">
+                      🎨 {ext.contributes.themes.length} Theme{ext.contributes.themes.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {ext.contributes.snippets && ext.contributes.snippets.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded bg-[#d29922]/15 text-[#d29922] border border-[#d29922]/30 text-[9px] font-medium">
+                      ⚡ {ext.contributes.snippets.length} Snippet{ext.contributes.snippets.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {ext.contributes.commands && ext.contributes.commands.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded bg-[#58a6ff]/15 text-[#58a6ff] border border-[#58a6ff]/30 text-[9px] font-medium">
+                      ⚙️ {ext.contributes.commands.length} Command{ext.contributes.commands.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Open VSX link */}
               <div className="flex items-center justify-between text-[10px] text-[#555555] pt-0.5">
                 <span className="px-1.5 py-0.2 rounded bg-[#1c1c1c] text-[#858585] text-[9px]">
